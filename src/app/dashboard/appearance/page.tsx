@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Crown, Lock, Check, Sparkles, Type, AlignLeft, Square, LayoutGrid, Image, Eye, EyeOff, Box, Mail, Code, Clock, Search, Heart } from "lucide-react"
 import { themes, proThemes, buttonStyles, avatarShapes, alignmentOptions } from "@/lib/themes"
 import { fontFamilies, fontSizeOptions, borderWidthOptions, shadowOptions, spacingOptions, layoutModes, hoverEffects, fontWeightOptions } from "@/lib/customization"
+import { PublicProfile } from "@/components/public-page/public-profile"
+import { ProfilePreview } from "@/components/dashboard/profile-preview"
+import type { LinkData, SocialLinkData, ProductData, EmbedData, PageData, IntegrationData } from "@/components/public-page/public-profile"
 
 const presetColors = [
   "#c04a2b", "#d46845", "#e8926e", "#ef4444",
@@ -57,6 +60,19 @@ export default function AppearancePage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
   const [brandingUnlocked, setBrandingUnlocked] = useState(false)
+  const [userUsername, setUserUsername] = useState("")
+  const [userBio, setUserBio] = useState("")
+  const [userAvatarUrl, setUserAvatarUrl] = useState("")
+  const [links, setLinks] = useState<LinkData[]>([])
+  const [socialLinks, setSocialLinks] = useState<SocialLinkData[]>([])
+  const [products, setProducts] = useState<ProductData[]>([])
+  const [embeds, setEmbeds] = useState<EmbedData[]>([])
+  const [pages, setPages] = useState<PageData[]>([])
+  const [integrations, setIntegrations] = useState<IntegrationData[]>([])
+  const loaded = useRef(false)
+  const [showMobilePreview, setShowMobilePreview] = useState(false)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>()
+  const savingRef = useRef(false)
 
   useEffect(() => {
     async function load() {
@@ -100,15 +116,76 @@ export default function AppearancePage() {
         setTipVenmo(data.tipVenmo || "")
         setTipPayPal(data.tipPayPal || "")
         setTipCashApp(data.tipCashApp || "")
+        setUserUsername(data.username || "")
+        setUserBio(data.bio || "")
+        setUserAvatarUrl(data.avatarUrl || "")
       }
       if (referralRes?.ok) {
         const data = await referralRes.json()
         setBrandingUnlocked(data.brandingUnlocked)
       }
+      const [linksRes, socialRes, productsRes, embedsRes, pagesRes, integrationsRes] = await Promise.all([
+        fetch("/api/links").catch(() => null),
+        fetch("/api/social").catch(() => null),
+        fetch("/api/products").catch(() => null),
+        fetch("/api/embeds").catch(() => null),
+        fetch("/api/pages").catch(() => null),
+        fetch("/api/integrations").catch(() => null),
+      ])
+      if (linksRes?.ok) setLinks(await linksRes.json())
+      if (socialRes?.ok) setSocialLinks(await socialRes.json())
+      if (productsRes?.ok) setProducts(await productsRes.json())
+      if (embedsRes?.ok) setEmbeds(await embedsRes.json())
+      if (pagesRes?.ok) setPages(await pagesRes.json())
+      if (integrationsRes?.ok) setIntegrations(await integrationsRes.json())
+      loaded.current = true
       setLoading(false)
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (!loaded.current) return
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    setMessage("")
+    autoSaveTimer.current = setTimeout(async () => {
+      if (savingRef.current) return
+      savingRef.current = true
+      setSaving(true)
+      const body: Record<string, any> = {
+        accentColor, theme, showBranding,
+        buttonStyle, bioAlignment,
+        fontFamily, fontSize, linkBorderWidth, linkShadow, linkSpacing,
+        layoutMode, hoverEffect, showAvatar, showBio,
+        isLocked, pagePassword, buttonFontWeight, enableEmailCapture, emailCaptureTitle, countdownTitle,
+        metaTitle, metaDescription, ogImageUrl, tipEnabled, tipVenmo, tipPayPal, tipCashApp,
+      }
+      if (isPro) {
+        body.buttonTextColor = buttonTextColor
+        body.avatarShape = avatarShape
+        body.backgroundColor = backgroundColor || null
+        body.headerImageUrl = headerImageUrl || null
+        body.customCss = customCss || null
+        body.buttonBorderColor = buttonBorderColor || null
+        body.countdownDate = countdownDate || null
+      }
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      setSaving(false)
+      savingRef.current = false
+      setMessage(res.ok ? "Saved" : "Save failed")
+    }, 800)
+  }, [
+    accentColor, theme, showBranding, buttonStyle, bioAlignment,
+    fontFamily, fontSize, linkBorderWidth, linkShadow, linkSpacing,
+    layoutMode, hoverEffect, showAvatar, showBio,
+    isLocked, pagePassword, buttonFontWeight, enableEmailCapture, emailCaptureTitle, countdownTitle,
+    metaTitle, metaDescription, ogImageUrl, tipEnabled, tipVenmo, tipPayPal, tipCashApp,
+    buttonTextColor, avatarShape, backgroundColor, headerImageUrl, customCss, buttonBorderColor, countdownDate,
+  ])
 
   function handleThemeSelect(themeId: string) {
     if (proThemes.includes(themeId) && !isPro) return
@@ -133,6 +210,8 @@ export default function AppearancePage() {
   }
 
   async function save() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    savingRef.current = true
     setSaving(true)
     setMessage("")
     const body: Record<string, any> = {
@@ -157,13 +236,10 @@ export default function AppearancePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     })
-    if (res.ok) {
-      setMessage("Appearance saved!")
-      update()
-    } else {
-      setMessage("Failed to save")
-    }
     setSaving(false)
+    savingRef.current = false
+    setMessage(res.ok ? "Saved" : "Save failed")
+    if (res.ok) update()
   }
 
   const canToggleBranding = isPro || brandingUnlocked
@@ -186,8 +262,62 @@ export default function AppearancePage() {
     )
   }
 
+  function renderPreview() {
+    if (!userUsername) return null
+    return (
+      <ProfilePreview
+        name={userName}
+        bio={userBio}
+        avatarUrl={userAvatarUrl}
+        username={userUsername}
+        isPro={isPro}
+        accentColor={accentColor}
+        theme={theme}
+        showBranding={showBranding}
+        buttonStyle={buttonStyle}
+        bioAlignment={bioAlignment}
+        buttonTextColor={buttonTextColor}
+        backgroundColor={backgroundColor}
+        avatarShape={avatarShape}
+        fontFamily={fontFamily}
+        fontSize={fontSize}
+        linkBorderWidth={linkBorderWidth}
+        linkShadow={linkShadow}
+        linkSpacing={linkSpacing}
+        layoutMode={layoutMode}
+        hoverEffect={hoverEffect}
+        showAvatar={showAvatar}
+        showBio={showBio}
+        headerImageUrl={headerImageUrl}
+        customCss={customCss}
+        isLocked={isLocked}
+        pagePassword={pagePassword}
+        buttonBorderColor={buttonBorderColor}
+        buttonFontWeight={buttonFontWeight}
+        countdownTitle={countdownTitle}
+        countdownDate={countdownDate}
+        enableEmailCapture={enableEmailCapture}
+        emailCaptureTitle={emailCaptureTitle}
+        metaTitle={metaTitle}
+        metaDescription={metaDescription}
+        ogImageUrl={ogImageUrl}
+        tipEnabled={tipEnabled}
+        tipVenmo={tipVenmo}
+        tipPayPal={tipPayPal}
+        tipCashApp={tipCashApp}
+        links={links}
+        socialLinks={socialLinks}
+        products={products}
+        embeds={embeds}
+        pages={pages}
+        integrations={integrations}
+      />
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="lg:flex lg:gap-6">
+      <div className="flex-1 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Appearance</h1>
         <p className="text-muted-foreground mt-1">Customize how your page looks</p>
@@ -979,12 +1109,89 @@ export default function AppearancePage() {
         </CardContent>
       </Card>
 
-      {message && (
-        <p className={`text-sm ${message.includes("saved") ? "text-green-600" : "text-red-600"}`}>{message}</p>
-      )}
-      <Button onClick={save} disabled={saving}>
-        {saving ? "Saving..." : "Save Changes"}
-      </Button>
+      <div className="flex items-center justify-between">
+        {message ? (
+          <p className={`text-sm ${message === "Saved" ? "text-green-600" : "text-red-600"}`}>{message}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">{saving ? "Saving..." : "All changes saved"}</p>
+        )}
+        <Button onClick={save} variant="outline" size="sm" disabled={saving}>
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </div>
     </div>
+
+    {renderPreview()}
+
+    {userUsername && (
+      <>
+        <button
+          onClick={() => setShowMobilePreview(true)}
+          className="lg:hidden fixed bottom-20 right-4 z-30 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center"
+        >
+          <Eye className="w-5 h-5" />
+        </button>
+        {showMobilePreview && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setShowMobilePreview(false)}>
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white z-10 pt-3 pb-2">
+                <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto" />
+              </div>
+              <div className="px-2 pb-6">
+                <PublicProfile
+                  name={userName}
+                  bio={userBio}
+                  avatarUrl={userAvatarUrl}
+                  theme={theme}
+                  accentColor={accentColor}
+                  showBranding={showBranding}
+                  buttonStyle={buttonStyle}
+                  bioAlignment={bioAlignment}
+                  buttonTextColor={buttonTextColor || null}
+                  backgroundColor={backgroundColor || null}
+                  avatarShape={avatarShape}
+                  fontFamily={fontFamily}
+                  fontSize={fontSize}
+                  linkBorderWidth={linkBorderWidth}
+                  linkShadow={linkShadow}
+                  linkSpacing={linkSpacing}
+                  layoutMode={layoutMode}
+                  hoverEffect={hoverEffect}
+                  showAvatar={showAvatar}
+                  showBio={showBio}
+                  headerImageUrl={headerImageUrl}
+                  customCss={customCss}
+                  isLocked={isLocked}
+                  pagePassword={pagePassword}
+                  buttonBorderColor={buttonBorderColor || null}
+                  buttonFontWeight={buttonFontWeight}
+                  countdownTitle={countdownTitle}
+                  countdownDate={countdownDate || null}
+                  enableEmailCapture={enableEmailCapture}
+                  emailCaptureTitle={emailCaptureTitle}
+                  tipEnabled={tipEnabled}
+                  tipVenmo={tipVenmo}
+                  tipPayPal={tipPayPal}
+                  tipCashApp={tipCashApp}
+                  links={links}
+                  socialLinks={socialLinks}
+                  products={products}
+                  embeds={embeds}
+                  pages={pages}
+                  integrations={integrations}
+                  username={userUsername}
+                  isPro={isPro}
+                  preview
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )}
+  </div>
   )
 }

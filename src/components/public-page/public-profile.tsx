@@ -5,7 +5,7 @@ import { themes, buttonStyles, avatarShapes } from "@/lib/themes"
 import { fontFamilies, fontSizeOptions, borderWidthOptions, shadowOptions, spacingOptions, layoutModes, hoverEffects, fontWeightOptions } from "@/lib/customization"
 import { getSocialPlatform } from "@/lib/social"
 
-interface LinkData {
+export interface LinkData {
   id: string
   title: string
   url: string
@@ -20,13 +20,13 @@ interface LinkData {
   gateValue?: string
 }
 
-interface SocialLinkData {
+export interface SocialLinkData {
   platform: string
   handle: string
   url: string
 }
 
-interface ProductData {
+export interface ProductData {
   id: string
   title: string
   description?: string
@@ -35,7 +35,7 @@ interface ProductData {
   sold: number
 }
 
-interface EmbedData {
+export interface EmbedData {
   id: string
   type: string
   title?: string
@@ -43,14 +43,14 @@ interface EmbedData {
   embedUrl?: string
 }
 
-interface PageData {
+export interface PageData {
   id: string
   title: string
   slug: string
   links: LinkData[]
 }
 
-interface IntegrationData {
+export interface IntegrationData {
   provider: string
   key: string
 }
@@ -101,6 +101,7 @@ interface PublicProfileProps {
   integrations?: IntegrationData[]
   isPro: boolean
   username: string
+  preview?: boolean
 }
 
 function buildUrl(link: LinkData): string {
@@ -223,7 +224,7 @@ export function PublicProfile({
   tipEnabled = false, tipVenmo, tipPayPal, tipCashApp,
   showInstagramGrid = false, gridColumns = 2,
   links, socialLinks, products = [], embeds = [], pages = [],
-  activePageSlug, integrations, username,
+  activePageSlug, integrations, username, preview = false,
 }: PublicProfileProps) {
   const [password, setPassword] = useState("")
   const [unlocked, setUnlocked] = useState(false)
@@ -304,10 +305,10 @@ export function PublicProfile({
     setBuying(null)
   }
 
-  if (isLocked && !unlocked) {
+  if (isLocked && !unlocked && !preview) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <AnalyticsScripts integrations={integrations} />
+        {!preview && <AnalyticsScripts integrations={integrations} />}
         <div className="max-w-sm w-full text-center space-y-6">
           <h1 className="font-heading text-2xl font-bold">{name}</h1>
           <p className="text-muted-foreground">This page is password protected</p>
@@ -327,7 +328,7 @@ export function PublicProfile({
 
   return (
     <div className={`min-h-screen ${bgGradient} px-4 pb-16`} style={bgStyle}>
-      <AnalyticsScripts integrations={integrations} />
+      {!preview && <AnalyticsScripts integrations={integrations} />}
       {customCss && <style>{customCss}</style>}
       <div className={`max-w-md mx-auto pt-12 ${bioAlignment === "left" ? "text-left" : "text-center"}`}>
         {headerImageUrl && (
@@ -419,7 +420,7 @@ export function PublicProfile({
                     </>
                   )
 
-                  return link.gateType ? (
+                  return link.gateType && !preview ? (
                     <GatedLink key={link.id} link={link} accentColor={accentColor}
                       buttonTextColor={buttonTextColor || "#fff"}
                       borderColorValue={borderColorValue}
@@ -428,9 +429,11 @@ export function PublicProfile({
                       {inner}
                     </GatedLink>
                   ) : (
-                    <a key={link.id} href={buildUrl(link)} target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackClick(link.id)}
-                      className={cardClasses}
+                    <a key={link.id} href={preview ? "#" : buildUrl(link)}
+                      target={preview ? undefined : "_blank"}
+                      rel={preview ? undefined : "noopener noreferrer"}
+                      onClick={preview ? undefined : () => trackClick(link.id)}
+                      className={`${cardClasses} ${preview ? "pointer-events-none cursor-default" : ""}`}
                       style={!hasImage ? { backgroundColor: accentColor, color: buttonTextColor || "#fff", fontFamily: activeFontFamily.family, borderColor: borderColorValue } : {}}
                     >
                       {inner}
@@ -478,8 +481,8 @@ export function PublicProfile({
                   <h3 className="text-sm font-semibold">{p.title}</h3>
                   {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
                   <p className="text-lg font-bold mt-2" style={{ color: accentColor }}>${(p.price / 100).toFixed(2)}</p>
-                  <button onClick={() => buyProduct(p.id)} disabled={buying === p.id}
-                    className="w-full mt-2 py-2 rounded-lg text-xs font-medium text-white transition-all hover:opacity-90"
+                  <button onClick={preview ? undefined : () => buyProduct(p.id)} disabled={buying === p.id || preview}
+                    className={`w-full mt-2 py-2 rounded-lg text-xs font-medium text-white transition-all ${preview ? "opacity-60" : "hover:opacity-90"}`}
                     style={{ backgroundColor: accentColor }}
                   >{buying === p.id ? "Redirecting..." : "Buy Now"}</button>
                 </div>
@@ -489,14 +492,14 @@ export function PublicProfile({
         )}
 
         {enableEmailCapture && !subscribed && (
-          <form onSubmit={handleSubscribe} className="mt-6 space-y-2">
+          <form onSubmit={preview ? (e) => e.preventDefault() : handleSubscribe} className="mt-6 space-y-2">
             <p className="text-sm text-muted-foreground">{emailCaptureTitle || "Subscribe for updates"}</p>
             <div className="flex gap-2">
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com" required
+                placeholder="you@example.com" required={!preview} readOnly={preview}
                 className="flex-1 h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
-              <button type="submit" disabled={subscribing}
+              <button type="submit" disabled={subscribing || preview}
                 className="h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
               >{subscribing ? "..." : "Join"}</button>
             </div>
@@ -530,9 +533,11 @@ export function PublicProfile({
       </div>
 
       {showBranding && (
-        <div className="fixed bottom-0 left-0 right-0 py-3 text-center bg-white/80 backdrop-blur-sm border-t border-gray-200/50">
-          <p className="text-xs text-gray-400">
-            Powered by <a href="/" className="font-medium hover:text-gray-600">Flolio</a>
+        <div className={`fixed bottom-0 left-0 right-0 py-3 text-center border-t border-gray-200/30 ${bgGradient}`}
+          style={{ ...bgStyle, backdropFilter: "blur(8px)" }}
+        >
+          <p className={`text-xs ${customBg ? "text-gray-400" : activeTheme.textClass} opacity-60`}>
+            Powered by <a href="/" className="font-medium hover:opacity-100 transition-opacity">Flolio</a>
           </p>
         </div>
       )}
