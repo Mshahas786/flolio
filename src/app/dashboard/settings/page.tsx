@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Crown, Image, Gift, Copy, Check, Globe, CreditCard } from "lucide-react"
+import { Crown, Image, Gift, Copy, Check, Globe, CreditCard, BarChart3, Mail, Trash2, Puzzle } from "lucide-react"
+import { toast } from "@/components/ui/toast"
 import { PRICE_TIERS } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
 
@@ -31,6 +32,20 @@ export default function SettingsPage() {
   const [subscription, setSubscription] = useState<any>(null)
   const [subscriptionLoading, setSubscriptionLoading] = useState(true)
   const [upgrading, setUpgrading] = useState(false)
+
+  const [integrations, setIntegrations] = useState<any[]>([])
+  const [integrationsLoading, setIntegrationsLoading] = useState(true)
+  const [configuring, setConfiguring] = useState<string | null>(null)
+  const [keyValue, setKeyValue] = useState("")
+
+  const integrationProviders = [
+    { value: "google_analytics", label: "Google Analytics", icon: BarChart3, category: "analytics", desc: "Track page visits with GA4", placeholder: "G-XXXXXXXXXX" },
+    { value: "meta_pixel", label: "Meta Pixel", icon: BarChart3, category: "analytics", desc: "Track conversions from Facebook/Instagram", placeholder: "1234567890" },
+    { value: "tiktok_pixel", label: "TikTok Pixel", icon: BarChart3, category: "analytics", desc: "Track TikTok ad conversions", placeholder: "TT-XXXXX" },
+    { value: "mailchimp", label: "Mailchimp", icon: Mail, category: "email", desc: "Sync subscribers to Mailchimp", placeholder: "Mailchimp API Key" },
+    { value: "convertkit", label: "ConvertKit", icon: Mail, category: "email", desc: "Sync subscribers to ConvertKit", placeholder: "ConvertKit API Key" },
+    { value: "kit", label: "Kit (ConvertKit)", icon: Mail, category: "email", desc: "Sync subscribers to Kit", placeholder: "Kit API Key" },
+  ]
 
   useEffect(() => {
     async function load() {
@@ -60,6 +75,12 @@ export default function SettingsPage() {
         setSubscription(subData)
       }
       setSubscriptionLoading(false)
+
+      const intRes = await fetch("/api/integrations")
+      if (intRes.ok) {
+        setIntegrations(await intRes.json())
+      }
+      setIntegrationsLoading(false)
 
       if (referralRes.status === 401) {
         const genRes = await fetch("/api/referral/generate")
@@ -113,6 +134,49 @@ export default function SettingsPage() {
     if (data.url) {
       window.location.href = data.url
     }
+  }
+
+  function getIntConfig(provider: string) {
+    return integrations.find((i: any) => i.provider === provider)
+  }
+
+  async function connectIntegration(provider: string) {
+    if (!keyValue) return
+    const res = await fetch("/api/integrations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, key: keyValue }),
+    })
+    if (res.ok) {
+      toast.success(`${getIntConfig(provider)?.label || provider} connected`)
+      setConfiguring(null)
+      setKeyValue("")
+      const r = await fetch("/api/integrations")
+      if (r.ok) setIntegrations(await r.json())
+    } else {
+      toast.error("Failed to connect")
+    }
+  }
+
+  async function toggleIntegration(provider: string, enabled: boolean) {
+    const res = await fetch("/api/integrations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, enabled: !enabled }),
+    })
+    if (res.ok) {
+      const r = await fetch("/api/integrations")
+      if (r.ok) setIntegrations(await r.json())
+    }
+  }
+
+  async function disconnectIntegration(provider: string) {
+    const config = getIntConfig(provider)
+    if (!config) return
+    await fetch(`/api/integrations/${config.id}`, { method: "DELETE" })
+    toast.error("Integration removed")
+    const r = await fetch("/api/integrations")
+    if (r.ok) setIntegrations(await r.json())
   }
 
   function copyReferralLink() {
@@ -242,6 +306,93 @@ export default function SettingsPage() {
                     {upgrading ? "Redirecting..." : "Upgrade to Pro"}
                   </Button>
                 )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Puzzle className="w-5 h-5 text-primary" />
+            Integrations
+          </CardTitle>
+          <CardDescription>Connect analytics, email marketing, and other tools</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {integrationsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium mb-3">Analytics</h3>
+                <div className="space-y-1">
+                  {integrationProviders.filter((p) => p.category === "analytics").map((p) => {
+                    const config = getIntConfig(p.value)
+                    return (
+                      <div key={p.value} className="flex items-center justify-between py-3 border-b last:border-0 gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{p.label}</p>
+                          <p className="text-xs text-muted-foreground">{p.desc}</p>
+                        </div>
+                        {configuring === p.value ? (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Input value={keyValue} onChange={(e) => setKeyValue(e.target.value)} placeholder={p.placeholder} className="w-36 sm:w-40 h-9 text-xs" />
+                            <Button size="sm" onClick={() => connectIntegration(p.value)} className="h-9">Connect</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setConfiguring(null)} className="h-9">Cancel</Button>
+                          </div>
+                        ) : config ? (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant={config.enabled ? "success" : "secondary"} className="text-xs">
+                              {config.enabled ? "Active" : "Paused"}
+                            </Badge>
+                            <Button size="sm" variant="outline" onClick={() => toggleIntegration(p.value, config.enabled)} className="h-9">
+                              {config.enabled ? "Pause" : "Activate"}
+                            </Button>
+                            <button onClick={() => disconnectIntegration(p.value)} title="Remove" className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-red-600 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => setConfiguring(p.value)} className="h-9 shrink-0">+ Connect</Button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium mb-3">Email Marketing</h3>
+                <div className="space-y-1">
+                  {integrationProviders.filter((p) => p.category === "email").map((p) => {
+                    const config = getIntConfig(p.value)
+                    return (
+                      <div key={p.value} className="flex items-center justify-between py-3 border-b last:border-0 gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{p.label}</p>
+                          <p className="text-xs text-muted-foreground">{p.desc}</p>
+                        </div>
+                        {configuring === p.value ? (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Input value={keyValue} onChange={(e) => setKeyValue(e.target.value)} placeholder={p.placeholder} className="w-36 sm:w-40 h-9 text-xs" />
+                            <Button size="sm" onClick={() => connectIntegration(p.value)} className="h-9">Connect</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setConfiguring(null)} className="h-9">Cancel</Button>
+                          </div>
+                        ) : config ? (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="success" className="text-xs">Connected</Badge>
+                            <button onClick={() => disconnectIntegration(p.value)} title="Remove" className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-red-600 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => setConfiguring(p.value)} className="h-9 shrink-0">+ Connect</Button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )}

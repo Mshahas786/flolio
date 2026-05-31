@@ -15,7 +15,6 @@ import {
   DollarSign,
   Music,
   FileText,
-  Puzzle,
   X,
   Ellipsis,
 } from "lucide-react"
@@ -29,7 +28,6 @@ const navItems = [
   { href: "/dashboard/pages", label: "Pages", icon: FileText },
   { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/integrations", label: "Integrations", icon: Puzzle },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
