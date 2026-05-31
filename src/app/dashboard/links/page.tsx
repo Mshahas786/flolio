@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Modal } from "@/components/ui/modal"
-import { Plus, Trash2, GripVertical, ExternalLink, Pause, Play, Clock, Tag, Smile, Wand2, Pencil, Link as LinkIcon, Share2, Music, Video, Headphones, Radio } from "lucide-react"
+import { Plus, Trash2, GripVertical, ExternalLink, Pause, Play, Clock, Tag, Smile, Wand2, Pencil, Link as LinkIcon, Share2, Music, Video, Headphones, Radio, DollarSign } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import { PRICE_TIERS } from "@/lib/pricing"
 import { emojis } from "@/lib/customization"
@@ -422,7 +422,7 @@ function SortableSocialCard({
 export default function LinksPage() {
   const { data: session } = useSession()
   const isPro = (session?.user as any)?.isPro
-  const [tab, setTab] = useState<"links" | "social" | "embeds">("links")
+  const [tab, setTab] = useState<"links" | "social" | "embeds" | "products">("links")
 
   // Link state
   const [links, setLinks] = useState<Link[]>([])
@@ -459,6 +459,18 @@ export default function LinksPage() {
     { value: "tiktok", label: "TikTok", icon: Radio },
     { value: "apple_music", label: "Apple Music", icon: Music },
   ]
+
+  const [products, setProducts] = useState<any[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productForm, setProductForm] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<any | null>(null)
+  const [prodTitle, setProdTitle] = useState("")
+  const [prodDesc, setProdDesc] = useState("")
+  const [prodPrice, setProdPrice] = useState("")
+  const [prodFileUrl, setProdFileUrl] = useState("")
+  const [prodFileType, setProdFileType] = useState("")
+  const [prodImageUrl, setProdImageUrl] = useState("")
+  const [prodSaving, setProdSaving] = useState(false)
 
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -651,6 +663,67 @@ export default function LinksPage() {
     setEmbedForm(true)
   }
 
+  async function fetchProducts() {
+    const res = await fetch("/api/products")
+    if (res.ok) setProducts(await res.json())
+    setProductsLoading(false)
+  }
+
+  useEffect(() => { fetchProducts() }, [])
+
+  function resetProductForm() {
+    setProductForm(false)
+    setEditingProduct(null)
+    setProdTitle("")
+    setProdDesc("")
+    setProdPrice("")
+    setProdFileUrl("")
+    setProdFileType("")
+    setProdImageUrl("")
+  }
+
+  function startEditProduct(p: any) {
+    setEditingProduct(p)
+    setProdTitle(p.title)
+    setProdDesc(p.description || "")
+    setProdPrice((p.price / 100).toFixed(2))
+    setProdFileUrl(p.fileUrl || "")
+    setProdFileType(p.fileType || "")
+    setProdImageUrl(p.imageUrl || "")
+    setProductForm(true)
+  }
+
+  async function saveProduct() {
+    if (!prodTitle || !prodPrice) return
+    setProdSaving(true)
+    const body = { title: prodTitle, description: prodDesc, price: parseFloat(prodPrice), fileUrl: prodFileUrl, fileType: prodFileType, imageUrl: prodImageUrl }
+    const res = editingProduct
+      ? await fetch(`/api/products/${editingProduct.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      : await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+    if (res.ok) {
+      toast.success(editingProduct ? "Product updated" : "Product created")
+      resetProductForm()
+      fetchProducts()
+    } else {
+      toast.error(editingProduct ? "Error updating product" : "Error creating product")
+    }
+    setProdSaving(false)
+  }
+
+  async function removeProduct(id: string) {
+    const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
+    if (res.ok) { toast.success("Product deleted"); fetchProducts() }
+  }
+
+  async function toggleProduct(id: string, isActive: boolean) {
+    await fetch(`/api/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !isActive }),
+    })
+    fetchProducts()
+  }
+
   const addedPlatforms = new Set(socialLinks.map((l) => l.platform))
   const availablePlatforms = socialPlatforms.filter((p) => !addedPlatforms.has(p.id))
 
@@ -760,6 +833,17 @@ export default function LinksPage() {
         >
           <Music className="w-4 h-4" />
           Embeds
+        </button>
+        <button
+          onClick={() => setTab("products")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            tab === "products"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <DollarSign className="w-4 h-4" />
+          Products
         </button>
       </div>
 
@@ -999,6 +1083,103 @@ export default function LinksPage() {
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => removeEmbed(e.id)} className="rounded-lg text-xs text-red-500">
                         <Trash2 className="w-3 h-3 mr-1" /> Remove
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Products tab */}
+      {tab === "products" && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Digital Products</h2>
+              <p className="text-sm text-muted-foreground mt-1">Sell digital goods directly from your Flolio page</p>
+            </div>
+            <Button onClick={() => { if (!productForm) resetProductForm(); setProductForm(!productForm) }} className="rounded-xl">
+              <Plus className="w-4 h-4 mr-2" /> Add Product
+            </Button>
+          </div>
+
+          {productForm && (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Title *</label>
+                    <Input value={prodTitle} onChange={(e) => setProdTitle(e.target.value)} placeholder="e.g. My eBook" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Price (USD) *</label>
+                    <Input type="number" step="0.01" min="0.50" value={prodPrice} onChange={(e) => setProdPrice(e.target.value)} placeholder="9.99" />
+                  </div>
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Description</label>
+                    <textarea value={prodDesc} onChange={(e) => setProdDesc(e.target.value)} placeholder="Describe your product..." className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">File URL</label>
+                    <Input value={prodFileUrl} onChange={(e) => setProdFileUrl(e.target.value)} placeholder="https://example.com/file.pdf" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">File Type</label>
+                    <Input value={prodFileType} onChange={(e) => setProdFileType(e.target.value)} placeholder="pdf, zip, mp3..." />
+                  </div>
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Image URL</label>
+                    <Input value={prodImageUrl} onChange={(e) => setProdImageUrl(e.target.value)} placeholder="https://example.com/cover.jpg" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveProduct} disabled={prodSaving || !prodTitle || !prodPrice} className="rounded-xl">
+                    {prodSaving ? "Saving..." : editingProduct ? "Update Product" : "Create Product"}
+                  </Button>
+                  <Button variant="outline" onClick={resetProductForm} className="rounded-xl">Cancel</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {productsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : products.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <DollarSign className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+                <p className="text-muted-foreground">No products yet. Create your first digital product.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products.map((p: any) => (
+                <Card key={p.id} className={`${!p.isActive ? "opacity-50" : ""}`}>
+                  <CardContent className="pt-6">
+                    {p.imageUrl && <img src={p.imageUrl} alt="" className="w-full h-32 object-cover rounded-lg mb-3" />}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-semibold">{p.title}</h3>
+                        {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
+                      </div>
+                      <Badge>${(p.price / 100).toFixed(2)}</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                      <span>{p.sold} sold</span>
+                      {p.fileType && <span>{p.fileType}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 mt-4">
+                      <Button size="sm" variant="outline" onClick={() => startEditProduct(p)} className="rounded-lg text-xs">
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => toggleProduct(p.id, p.isActive)} className="rounded-lg text-xs">
+                        {p.isActive ? "Pause" : "Activate"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => removeProduct(p.id)} className="rounded-lg text-xs text-red-500">
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </CardContent>

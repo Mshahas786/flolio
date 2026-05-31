@@ -12,7 +12,6 @@ import {
   Settings,
   LogOut,
   ExternalLink,
-  DollarSign,
   FileText,
   X,
   Ellipsis,
@@ -22,7 +21,6 @@ import { useState } from "react"
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/links", label: "Links & Social", icon: LinkIcon },
-  { href: "/dashboard/products", label: "Products", icon: DollarSign },
   { href: "/dashboard/pages", label: "Pages", icon: FileText },
   { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
