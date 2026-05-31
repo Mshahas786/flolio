@@ -13,7 +13,6 @@ import {
   CreditCard,
   LogOut,
   ExternalLink,
-  Share2,
   DollarSign,
   Music,
   FileText,
@@ -25,8 +24,7 @@ import { useState } from "react"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/links", label: "Links", icon: LinkIcon },
-  { href: "/dashboard/social", label: "Social", icon: Share2 },
+  { href: "/dashboard/links", label: "Links & Social", icon: LinkIcon },
   { href: "/dashboard/products", label: "Products", icon: DollarSign },
   { href: "/dashboard/embeds", label: "Embeds", icon: Music },
   { href: "/dashboard/pages", label: "Pages", icon: FileText },
