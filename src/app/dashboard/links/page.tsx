@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Modal } from "@/components/ui/modal"
-import { Plus, Trash2, GripVertical, ExternalLink, Pause, Play, Clock, Tag, Smile, Wand2, Pencil, Link as LinkIcon, Share2 } from "lucide-react"
+import { Plus, Trash2, GripVertical, ExternalLink, Pause, Play, Clock, Tag, Smile, Wand2, Pencil, Link as LinkIcon, Share2, Music, Video, Headphones, Radio } from "lucide-react"
+import { toast } from "@/components/ui/toast"
 import { PRICE_TIERS } from "@/lib/pricing"
 import { emojis } from "@/lib/customization"
 import { socialPlatforms, getSocialPlatform } from "@/lib/social"
@@ -421,7 +422,7 @@ function SortableSocialCard({
 export default function LinksPage() {
   const { data: session } = useSession()
   const isPro = (session?.user as any)?.isPro
-  const [tab, setTab] = useState<"links" | "social">("links")
+  const [tab, setTab] = useState<"links" | "social" | "embeds">("links")
 
   // Link state
   const [links, setLinks] = useState<Link[]>([])
@@ -440,6 +441,24 @@ export default function LinksPage() {
   const [handle, setHandle] = useState("")
   const [socialError, setSocialError] = useState("")
   const [addingSocial, setAddingSocial] = useState(false)
+
+  const [embeds, setEmbeds] = useState<any[]>([])
+  const [embedsLoading, setEmbedsLoading] = useState(true)
+  const [embedForm, setEmbedForm] = useState(false)
+  const [editingEmbed, setEditingEmbed] = useState<any | null>(null)
+  const [embedType, setEmbedType] = useState("youtube")
+  const [embedTitle, setEmbedTitle] = useState("")
+  const [embedUrl, setEmbedUrl] = useState("")
+  const [embedSaving, setEmbedSaving] = useState(false)
+
+  const embedTypes = [
+    { value: "youtube", label: "YouTube", icon: Video },
+    { value: "spotify", label: "Spotify", icon: Music },
+    { value: "soundcloud", label: "SoundCloud", icon: Music },
+    { value: "podcast", label: "Podcast", icon: Headphones },
+    { value: "tiktok", label: "TikTok", icon: Radio },
+    { value: "apple_music", label: "Apple Music", icon: Music },
+  ]
 
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -576,6 +595,62 @@ export default function LinksPage() {
 
   useEffect(() => { fetchSocial() }, [])
 
+  async function fetchEmbeds() {
+    const res = await fetch("/api/embeds")
+    if (res.ok) setEmbeds(await res.json())
+    setEmbedsLoading(false)
+  }
+
+  useEffect(() => { fetchEmbeds() }, [])
+
+  function resetEmbedForm() {
+    setEmbedForm(false)
+    setEditingEmbed(null)
+    setEmbedType("youtube")
+    setEmbedTitle("")
+    setEmbedUrl("")
+  }
+
+  async function saveEmbed() {
+    if (!embedUrl) return
+    setEmbedSaving(true)
+    const body = { type: embedType, title: embedTitle, url: embedUrl }
+    const res = editingEmbed
+      ? await fetch(`/api/embeds/${editingEmbed.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      : await fetch("/api/embeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+    if (res.ok) {
+      toast.success(editingEmbed ? "Embed updated" : "Embed added")
+      resetEmbedForm()
+      fetchEmbeds()
+    } else {
+      const err = await res.json()
+      toast.error(err.error || "Error saving embed")
+    }
+    setEmbedSaving(false)
+  }
+
+  async function removeEmbed(id: string) {
+    const res = await fetch(`/api/embeds/${id}`, { method: "DELETE" })
+    if (res.ok) { toast.success("Embed removed"); fetchEmbeds() }
+  }
+
+  async function toggleEmbed(id: string, isActive: boolean) {
+    await fetch(`/api/embeds/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !isActive }),
+    })
+    fetchEmbeds()
+  }
+
+  function startEditEmbed(e: any) {
+    setEditingEmbed(e)
+    setEmbedType(e.type)
+    setEmbedTitle(e.title || "")
+    setEmbedUrl(e.url)
+    setEmbedForm(true)
+  }
+
   const addedPlatforms = new Set(socialLinks.map((l) => l.platform))
   const availablePlatforms = socialPlatforms.filter((p) => !addedPlatforms.has(p.id))
 
@@ -674,6 +749,17 @@ export default function LinksPage() {
         >
           <Share2 className="w-4 h-4" />
           Social
+        </button>
+        <button
+          onClick={() => setTab("embeds")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            tab === "embeds"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Music className="w-4 h-4" />
+          Embeds
         </button>
       </div>
 
@@ -815,6 +901,111 @@ export default function LinksPage() {
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Embeds tab */}
+      {tab === "embeds" && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Media Embeds</h2>
+              <p className="text-sm text-muted-foreground mt-1">Add YouTube videos, Spotify tracks, podcasts, and more</p>
+            </div>
+            <Button onClick={() => { if (!embedForm) resetEmbedForm(); setEmbedForm(!embedForm) }} className="rounded-xl">
+              <Plus className="w-4 h-4 mr-2" /> Add Embed
+            </Button>
+          </div>
+
+          {embedForm && (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Type</label>
+                  <div className="flex flex-wrap gap-2">
+                    {embedTypes.map((et) => (
+                      <button key={et.value} onClick={() => setEmbedType(et.value)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                          embedType === et.value ? "border-primary bg-primary/10 text-primary" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <et.icon className="w-3.5 h-3.5" /> {et.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Title</label>
+                  <Input value={embedTitle} onChange={(e) => setEmbedTitle(e.target.value)} placeholder="My favorite song" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">URL *</label>
+                  <Input value={embedUrl} onChange={(e) => setEmbedUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveEmbed} disabled={embedSaving || !embedUrl} className="rounded-xl">
+                    {embedSaving ? "Saving..." : editingEmbed ? "Update Embed" : "Add Embed"}
+                  </Button>
+                  <Button variant="outline" onClick={resetEmbedForm} className="rounded-xl">Cancel</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {embedsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : embeds.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Music className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+                <p className="text-muted-foreground">No embeds yet. Add music, videos, or podcasts.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {embeds.map((e: any) => (
+                <Card key={e.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const et = embedTypes.find((t: any) => t.value === e.type)
+                          return et ? <et.icon className="w-5 h-5 text-primary" /> : null
+                        })()}
+                        <div>
+                          <h3 className="font-semibold text-sm">{e.title || e.type}</h3>
+                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">{e.url}</p>
+                        </div>
+                      </div>
+                      <Badge variant={e.isActive ? "success" : "secondary"} className="text-xs">{e.type}</Badge>
+                    </div>
+                    {e.embedUrl && e.type === "youtube" && (
+                      <div className="aspect-video rounded-lg overflow-hidden bg-black/5 mb-2">
+                        <iframe src={e.embedUrl} className="w-full h-full" allowFullScreen />
+                      </div>
+                    )}
+                    {e.embedUrl && e.type === "spotify" && (
+                      <iframe src={e.embedUrl} className="w-full h-[80px] rounded-lg" allow="encrypted-media" />
+                    )}
+                    {e.embedUrl && e.type === "soundcloud" && (
+                      <iframe src={e.embedUrl} className="w-full h-[120px] rounded-lg" />
+                    )}
+                    <div className="flex items-center gap-2 mt-3">
+                      <Button size="sm" variant="outline" onClick={() => startEditEmbed(e)} className="rounded-lg text-xs">
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => toggleEmbed(e.id, e.isActive)} className="rounded-lg text-xs">
+                        {e.isActive ? "Pause" : "Activate"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => removeEmbed(e.id)} className="rounded-lg text-xs text-red-500">
+                        <Trash2 className="w-3 h-3 mr-1" /> Remove
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
