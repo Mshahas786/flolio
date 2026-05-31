@@ -449,78 +449,78 @@ export default function SettingsPage() {
             )}
           </CardTitle>
           <CardDescription>
-            {isPro
-              ? "Connect your own domain to your Flolio page"
-              : "Upgrade to Pro to use a custom domain"}
+            Connect your own domain to your Flolio page
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isPro ? (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Your Domain</label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input
-                    placeholder="links.yourdomain.com"
-                    value={domainInput}
-                    onChange={(e) => setDomainInput(e.target.value)}
-                    disabled={!!customDomain}
-                  />
-                  {customDomain ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="shrink-0"
-                      onClick={async () => {
-                        setDomainSaving(true)
-                        setDomainMessage("")
-                        const res = await fetch("/api/domain", { method: "DELETE" })
-                        if (res.ok) {
-                          setCustomDomain("")
-                          setDomainInput("")
-                          setDomainVerified(false)
-                          setDomainMessage("Domain disconnected")
-                        } else {
-                          setDomainMessage("Failed to disconnect domain")
-                        }
-                        setDomainSaving(false)
-                      }}
-                      disabled={domainSaving}
-                    >
-                      Disconnect
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="shrink-0"
-                      onClick={async () => {
-                        setDomainSaving(true)
-                        setDomainMessage("")
-                        const res = await fetch("/api/domain", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ domain: domainInput }),
-                        })
-                        if (res.ok) {
-                          const data = await res.json()
-                          setCustomDomain(data.customDomain)
-                          setDomainVerified(false)
-                          setDomainMessage("Domain connected! Set up DNS to complete verification.")
-                        } else {
-                          const data = await res.json()
-                          setDomainMessage(data.error || "Failed to connect domain")
-                        }
-                        setDomainSaving(false)
-                      }}
-                      disabled={domainSaving || !domainInput}
-                    >
-                      Connect
-                    </Button>
-                  )}
-                </div>
-              </div>
-              {customDomain && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 space-y-2 text-sm">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Your Domain</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="links.yourdomain.com"
+                value={domainInput}
+                onChange={(e) => setDomainInput(e.target.value)}
+                disabled={!isPro || !!customDomain}
+              />
+              {customDomain ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={async () => {
+                    setDomainSaving(true)
+                    setDomainMessage("")
+                    const res = await fetch("/api/domain", { method: "DELETE" })
+                    if (res.ok) {
+                      setCustomDomain("")
+                      setDomainInput("")
+                      setDomainVerified(false)
+                      setDomainMessage("Domain disconnected")
+                    } else {
+                      setDomainMessage("Failed to disconnect domain")
+                    }
+                    setDomainSaving(false)
+                  }}
+                  disabled={domainSaving}
+                >
+                  Disconnect
+                </Button>
+              ) : isPro ? (
+                <Button
+                  size="sm"
+                  className="shrink-0"
+                  onClick={async () => {
+                    setDomainSaving(true)
+                    setDomainMessage("")
+                    const res = await fetch("/api/domain", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ domain: domainInput }),
+                    })
+                    if (res.ok) {
+                      const data = await res.json()
+                      setCustomDomain(data.customDomain)
+                      setDomainVerified(false)
+                      setDomainMessage("Domain connected! Set up DNS to complete verification.")
+                    } else {
+                      const data = await res.json()
+                      setDomainMessage(data.error || "Failed to connect domain")
+                    }
+                    setDomainSaving(false)
+                  }}
+                  disabled={domainSaving || !domainInput}
+                >
+                  Connect
+                </Button>
+              ) : (
+                <Button size="sm" className="shrink-0" disabled>
+                  <Crown className="w-3 h-3 mr-1" /> Upgrade to Pro
+                </Button>
+              )}
+            </div>
+          </div>
+          {customDomain && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 space-y-2 text-sm">
                   <p className="font-medium text-blue-800">DNS Setup Instructions</p>
                   <ol className="text-blue-700 space-y-1 list-decimal list-inside">
                     <li>Add a CNAME record pointing <strong>{customDomain}</strong> to <strong>{typeof window !== "undefined" ? window.location.host : "your-app.vercel.app"}</strong></li>
@@ -544,12 +544,6 @@ export default function SettingsPage() {
                   {domainMessage}
                 </p>
               )}
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Custom domains are available on the Pro plan. Upgrade to connect your own domain.
-            </p>
-          )}
         </CardContent>
       </Card>
 

@@ -174,6 +174,18 @@ export default function AppearancePage() {
     return <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full ml-2"><Crown className="w-3 h-3" />Pro</span>
   }
 
+  function ProLock() {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl">
+        <div className="text-center">
+          <Crown className="w-8 h-8 text-yellow-500 mx-auto mb-1" />
+          <p className="text-sm font-semibold text-yellow-700">Upgrade to Pro</p>
+          <p className="text-xs text-yellow-600/70">Unlock this feature</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -231,45 +243,44 @@ export default function AppearancePage() {
         </CardContent>
       </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              Custom Background Color
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Override the theme with a solid background color</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: backgroundColor || "#ffffff" }} />
-              <Input
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-                placeholder="#ffffff"
-                className="w-32"
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            Custom Background Color
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Override the theme with a solid background color</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: backgroundColor || "#ffffff" }} />
+            <Input
+              value={backgroundColor}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              placeholder="#ffffff"
+              className="w-32"
+            />
+            {backgroundColor && (
+              <button onClick={() => setBackgroundColor("")} className="text-xs text-muted-foreground underline">
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["#ffffff", "#f3f4f6", "#fef3c7", "#ede9fe", "#dbeafe", "#fce7f3", "#ecfdf5", "#1e1b4b", "#0f172a", "#1c1917"].map((color) => (
+              <button
+                key={color}
+                onClick={() => setBackgroundColor(color)}
+                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                  backgroundColor === color ? "border-gray-900 scale-110" : "border-gray-200"
+                }`}
+                style={{ backgroundColor: color }}
               />
-              {backgroundColor && (
-                <button onClick={() => setBackgroundColor("")} className="text-xs text-muted-foreground underline">
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {["#ffffff", "#f3f4f6", "#fef3c7", "#ede9fe", "#dbeafe", "#fce7f3", "#ecfdf5", "#1e1b4b", "#0f172a", "#1c1917"].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setBackgroundColor(color)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    backgroundColor === color ? "border-gray-900 scale-110" : "border-gray-200"
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            ))}
+          </div>
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
       <Card>
         <CardHeader>
@@ -584,70 +595,68 @@ export default function AppearancePage() {
         </CardContent>
       </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Image className="w-5 h-5 text-primary" />
-              Header Image
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Add a banner image at the top of your page</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                value={headerImageUrl}
-                onChange={(e) => setHeaderImageUrl(e.target.value)}
-                placeholder="https://example.com/banner.jpg"
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Image className="w-5 h-5 text-primary" />
+            Header Image
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Add a banner image at the top of your page</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Input
+              value={headerImageUrl}
+              onChange={(e) => setHeaderImageUrl(e.target.value)}
+              placeholder="https://example.com/banner.jpg"
+            />
+            {headerImageUrl && (
+              <img
+                src={headerImageUrl}
+                alt="Header preview"
+                className="w-full h-32 object-cover rounded-xl border"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
               />
-              {headerImageUrl && (
-                <img
-                  src={headerImageUrl}
-                  alt="Header preview"
-                  className="w-full h-32 object-cover rounded-xl border"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                />
-              )}
-              <p className="text-xs text-muted-foreground">
-                Recommended size: 1200x600px. Will be cropped to 2:1 ratio.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            )}
+            <p className="text-xs text-muted-foreground">
+              Recommended size: 1200x600px. Will be cropped to 2:1 ratio.
+            </p>
+          </div>
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Box className="w-5 h-5 text-primary" />
-              Button Border Color
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Override the border color on your link buttons</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: buttonBorderColor || accentColor }} />
-              <Input value={buttonBorderColor} onChange={(e) => setButtonBorderColor(e.target.value)} placeholder={accentColor} className="w-32" />
-              {buttonBorderColor && (
-                <button onClick={() => setButtonBorderColor("")} className="text-xs text-muted-foreground underline">Clear</button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {["#ffffff", "#e5e7eb", "#9ca3af", "#374151", "#000000", accentColor].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setButtonBorderColor(color === accentColor ? "" : color)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${buttonBorderColor === color || (!buttonBorderColor && color === accentColor) ? "border-gray-900 scale-110" : "border-gray-200"}`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Box className="w-5 h-5 text-primary" />
+            Button Border Color
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Override the border color on your link buttons</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: buttonBorderColor || accentColor }} />
+            <Input value={buttonBorderColor} onChange={(e) => setButtonBorderColor(e.target.value)} placeholder={accentColor} className="w-32" />
+            {buttonBorderColor && (
+              <button onClick={() => setButtonBorderColor("")} className="text-xs text-muted-foreground underline">Clear</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["#ffffff", "#e5e7eb", "#9ca3af", "#374151", "#000000", accentColor].map((color) => (
+              <button
+                key={color}
+                onClick={() => setButtonBorderColor(color === accentColor ? "" : color)}
+                className={`w-8 h-8 rounded-full border-2 transition-all ${buttonBorderColor === color || (!buttonBorderColor && color === accentColor) ? "border-gray-900 scale-110" : "border-gray-200"}`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
       <Card>
         <CardHeader>
@@ -733,114 +742,110 @@ export default function AppearancePage() {
         </CardContent>
       </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              Countdown Timer
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Show a countdown on your page for launches or events</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              value={countdownTitle}
-              onChange={(e) => setCountdownTitle(e.target.value)}
-              placeholder="e.g. Launching in"
-            />
-            <Input
-              type="datetime-local"
-              value={countdownDate}
-              onChange={(e) => setCountdownDate(e.target.value)}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
+            Countdown Timer
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Show a countdown on your page for launches or events</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            value={countdownTitle}
+            onChange={(e) => setCountdownTitle(e.target.value)}
+            placeholder="e.g. Launching in"
+          />
+          <Input
+            type="datetime-local"
+            value={countdownDate}
+            onChange={(e) => setCountdownDate(e.target.value)}
+          />
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Code className="w-5 h-5 text-primary" />
-              Custom CSS
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Inject custom CSS to style your page (advanced)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <textarea
-              value={customCss}
-              onChange={(e) => setCustomCss(e.target.value)}
-              placeholder="/* Add your custom CSS here */
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Code className="w-5 h-5 text-primary" />
+            Custom CSS
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Inject custom CSS to style your page (advanced)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <textarea
+            value={customCss}
+            onChange={(e) => setCustomCss(e.target.value)}
+            placeholder="/* Add your custom CSS here */
 .my-link { background: red !important; }"
-              className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
-          </CardContent>
-        </Card>
-      )}
+            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          />
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              Button Text Color
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Customize the text color on your buttons</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg border-2 border-gray-200 flex items-center justify-center text-xs font-bold" style={{ backgroundColor: accentColor, color: buttonTextColor }}>
-                Aa
-              </div>
-              <Input value={buttonTextColor} onChange={(e) => setButtonTextColor(e.target.value)} className="w-32" />
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            Button Text Color
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Customize the text color on your buttons</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg border-2 border-gray-200 flex items-center justify-center text-xs font-bold" style={{ backgroundColor: accentColor, color: buttonTextColor }}>
+              Aa
             </div>
-            <div className="flex flex-wrap gap-2">
-              {["#ffffff", "#000000", "#1e293b", "#f8fafc", "#fef2f2", "#ecfdf5"].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setButtonTextColor(color)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    buttonTextColor === color ? "border-gray-900 scale-110" : "border-gray-200"
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            <Input value={buttonTextColor} onChange={(e) => setButtonTextColor(e.target.value)} className="w-32" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["#ffffff", "#000000", "#1e293b", "#f8fafc", "#fef2f2", "#ecfdf5"].map((color) => (
+              <button
+                key={color}
+                onClick={() => setButtonTextColor(color)}
+                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                  buttonTextColor === color ? "border-gray-900 scale-110" : "border-gray-200"
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
-      {isPro && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              Avatar Shape
-              <ProBadge />
-            </CardTitle>
-            <CardDescription>Change how your profile picture is displayed</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {avatarShapes.map((shape) => (
-                <button
-                  key={shape.id}
-                  onClick={() => setAvatarShape(shape.id)}
-                  className={`flex-1 py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all ${
-                    avatarShape === shape.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-gray-200 hover:border-gray-300 text-gray-700"
-                  }`}
-                >
-                  <div className={`w-12 h-12 bg-gray-300 mx-auto mb-2 ${shape.className}`} />
-                  {shape.name}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            Avatar Shape
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Change how your profile picture is displayed</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            {avatarShapes.map((shape) => (
+              <button
+                key={shape.id}
+                onClick={() => setAvatarShape(shape.id)}
+                className={`flex-1 py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all ${
+                  avatarShape === shape.id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-gray-200 hover:border-gray-300 text-gray-700"
+                }`}
+              >
+                <div className={`w-12 h-12 bg-gray-300 mx-auto mb-2 ${shape.className}`} />
+                {shape.name}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+        {!isPro && <ProLock />}
+      </Card>
 
       <Card>
         <CardHeader>
@@ -918,14 +923,19 @@ export default function AppearancePage() {
               <button
                 key={preset.id}
                 onClick={() => applyPreset(preset)}
-                className={`flex flex-col items-center gap-2 py-4 px-3 text-sm font-medium border-2 rounded-xl transition-all ${
+                className={`relative flex flex-col items-center gap-2 py-4 px-3 text-sm font-medium border-2 rounded-xl transition-all ${
                   theme === preset.theme && buttonStyle === preset.buttonStyle && hoverEffect === preset.hoverEffect && layoutMode === preset.layoutMode
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-gray-200 hover:border-gray-300 text-gray-700"
-                }`}
+                } ${preset.isPro && !isPro ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <div className={`w-full h-10 rounded-lg ${preset.swatch}`} />
                 <span>{preset.name}</span>
+                {preset.isPro && !isPro && (
+                  <div className="absolute top-1 right-1">
+                    <Crown className="w-3 h-3 text-yellow-500" />
+                  </div>
+                )}
               </button>
             ))}
           </div>
