@@ -24,7 +24,7 @@ function RegisterForm() {
     if (refCode) {
       localStorage.setItem("pending_ref", refCode)
     }
-    signIn("google", { callbackUrl: "/onboarding" })
+    signIn("google", { callbackUrl: "/dashboard" })
   }
 
   async function handleSubmit(e: React.FormEvent) {

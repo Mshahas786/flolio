@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 
 export async function GET(req: Request) {
@@ -9,6 +11,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ available: false, reason: "invalid" })
   }
 
+  const session = await getServerSession(authOptions)
   const existing = await prisma.user.findUnique({ where: { username } })
-  return NextResponse.json({ available: !existing })
+  const available = !existing || (session?.user?.id === existing.id)
+  return NextResponse.json({ available })
 }

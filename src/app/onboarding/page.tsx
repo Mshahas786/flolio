@@ -4,18 +4,24 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Check, X, Loader2 } from "lucide-react"
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { data: session, update } = useSession()
+  const { data: session, status, update } = useSession()
   const [username, setUsername] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [availability, setAvailability] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    if (session?.user?.username) {
+      router.push("/dashboard")
+      router.refresh()
+    }
+  }, [session, router])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -87,6 +93,14 @@ export default function OnboardingPage() {
       setError("Something went wrong")
       setLoading(false)
     }
+  }
+
+  if (status === "loading" || session?.user?.username) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/[0.08] via-background to-primary/[0.04] px-4">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
   }
 
   return (
