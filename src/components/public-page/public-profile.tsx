@@ -326,10 +326,10 @@ export function PublicProfile({
   }
 
   return (
-    <div className={`min-h-screen ${bgGradient} py-12 px-4`} style={bgStyle}>
+    <div className={`min-h-screen ${bgGradient} px-4 pb-16`} style={bgStyle}>
       <AnalyticsScripts integrations={integrations} />
       {customCss && <style>{customCss}</style>}
-      <div className={`max-w-md mx-auto ${bioAlignment === "left" ? "text-left" : "text-center"}`}>
+      <div className={`max-w-md mx-auto pt-12 ${bioAlignment === "left" ? "text-left" : "text-center"}`}>
         {headerImageUrl && (
           <img src={headerImageUrl} alt="" className="w-full h-40 object-cover rounded-2xl mb-6 shadow-md" />
         )}
@@ -527,12 +527,15 @@ export function PublicProfile({
           </div>
         )}
 
-        {showBranding && (
-          <p className="mt-8 text-xs text-gray-400">
-            Powered by <a href="/" className="underline hover:text-gray-600">Flolio</a>
-          </p>
-        )}
       </div>
+
+      {showBranding && (
+        <div className="fixed bottom-0 left-0 right-0 py-3 text-center bg-white/80 backdrop-blur-sm border-t border-gray-200/50">
+          <p className="text-xs text-gray-400">
+            Powered by <a href="/" className="font-medium hover:text-gray-600">Flolio</a>
+          </p>
+        </div>
+      )}
     </div>
   )
 }
