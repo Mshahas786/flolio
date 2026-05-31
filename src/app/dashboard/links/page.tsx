@@ -85,20 +85,20 @@ function EmojiPicker({ value, onChange }: { value: string | null; onChange: (emo
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-8 h-8 rounded-lg border border-input bg-background flex items-center justify-center text-sm hover:bg-accent shrink-0"
+        className="w-10 h-10 rounded-lg border border-input bg-background flex items-center justify-center text-base hover:bg-accent shrink-0"
       >
-        {value || <Smile className="w-3.5 h-3.5 text-muted-foreground" />}
+        {value || <Smile className="w-4 h-4 text-muted-foreground" />}
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 w-52 p-2 bg-card border rounded-xl shadow-xl grid grid-cols-8 gap-1 max-h-40 overflow-y-auto">
+          <div className="absolute top-full left-0 mt-1 z-20 w-64 p-2 bg-card border rounded-xl shadow-xl grid grid-cols-7 gap-1.5 max-h-48 overflow-y-auto">
             {emojis.map((e) => (
               <button
                 key={e}
                 type="button"
                 onClick={() => { onChange(e === value ? null : e); setOpen(false) }}
-                className={`w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-sm ${value === e ? "bg-primary/10 ring-1 ring-primary" : ""}`}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent text-base ${value === e ? "bg-primary/10 ring-1 ring-primary" : ""}`}
               >
                 {e}
               </button>
@@ -107,7 +107,7 @@ function EmojiPicker({ value, onChange }: { value: string | null; onChange: (emo
               <button
                 type="button"
                 onClick={() => { onChange(null); setOpen(false) }}
-                className="col-span-8 text-xs text-muted-foreground hover:text-foreground py-1"
+                className="col-span-7 text-xs text-muted-foreground hover:text-foreground py-2"
               >
                 Remove icon
               </button>
@@ -181,21 +181,23 @@ function SortableLinkCard({
             <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 inline-block">{link.section}</span>
           )}
         </div>
-        <div className="flex items-start gap-1 shrink-0">
-          <span className="hidden sm:inline text-xs text-muted-foreground mt-1.5">{link.clicks} clicks</span>
-          <Badge variant={status.variant} className="mt-1.5">{status.label}</Badge>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(link)} title="Edit link">
-            <Pencil className="w-3.5 h-3.5" />
-          </Button>
-          <a href={link.url} target="_blank" rel="noopener noreferrer">
-            <Button variant="ghost" size="icon" className="h-8 w-8"><ExternalLink className="w-3.5 h-3.5" /></Button>
-          </a>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleLink(link.id, link.isActive)}>
-            {link.isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-destructive/10" onClick={() => onDeleteLink(link.id)}>
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+        <div className="flex items-start gap-0.5 shrink-0">
+          <span className="hidden sm:inline text-xs text-muted-foreground mt-3 mr-1">{link.clicks} clicks</span>
+          <Badge variant={status.variant} className="mt-2.5">{status.label}</Badge>
+          <div className="flex items-center gap-0.5">
+            <button onClick={() => onEdit(link)} title="Edit link" className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+              <Pencil className="w-4 h-4" />
+            </button>
+            <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+              <ExternalLink className="w-4 h-4" />
+            </a>
+            <button onClick={() => onToggleLink(link.id, link.isActive)} title={link.isActive ? "Pause" : "Activate"} className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+              {link.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </button>
+            <button onClick={() => onDeleteLink(link.id)} title="Delete" className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-destructive/10 text-red-600 transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -401,15 +403,13 @@ function SortableSocialCard({
             placeholder="your handle"
           />
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <a href={social.url} target="_blank" rel="noopener noreferrer">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <a href={social.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+            <ExternalLink className="w-4 h-4" />
           </a>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-destructive/10" onClick={() => onDelete(social.id)}>
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+          <button onClick={() => onDelete(social.id)} title="Delete" className="flex items-center justify-center h-10 w-10 rounded-lg hover:bg-destructive/10 text-red-600 transition-colors">
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
