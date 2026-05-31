@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Modal } from "@/components/ui/modal"
-import { Plus, Trash2, GripVertical, ExternalLink, Pause, Play, Clock, Tag, Smile, Wand2, Pencil, Link as LinkIcon, Share2, Music, Video, Headphones, Radio, DollarSign } from "lucide-react"
+import { ImageUpload } from "@/components/ui/image-upload"
+import { Plus, Trash2, GripVertical, ExternalLink, Pause, Play, Clock, Tag, Smile, Wand2, Pencil, Link as LinkIcon, Share2, Music, Video, Headphones, Radio, DollarSign, Image as ImageIcon } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import { PRICE_TIERS } from "@/lib/pricing"
 import { emojis } from "@/lib/customization"
@@ -80,35 +81,68 @@ const emptyForm: LinkFormData = {
 
 function EmojiPicker({ value, onChange }: { value: string | null; onChange: (emoji: string | null) => void }) {
   const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<"emoji" | "image">("emoji")
+  const isImage = value?.startsWith("http")
 
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-10 h-10 rounded-lg border border-input bg-background flex items-center justify-center text-base hover:bg-accent shrink-0"
+        className="w-10 h-10 rounded-lg border border-input bg-background flex items-center justify-center text-base hover:bg-accent shrink-0 overflow-hidden"
       >
-        {value || <Smile className="w-4 h-4 text-muted-foreground" />}
+        {isImage ? (
+          <img src={value!} alt="" className="w-full h-full object-cover" />
+        ) : value ? (
+          <span>{value}</span>
+        ) : (
+          <Smile className="w-4 h-4 text-muted-foreground" />
+        )}
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 w-64 p-2 bg-card border rounded-xl shadow-xl grid grid-cols-7 gap-1.5 max-h-48 overflow-y-auto">
-            {emojis.map((e) => (
+          <div className="absolute top-full left-0 mt-1 z-20 w-64 bg-card border rounded-xl shadow-xl p-2">
+            <div className="flex gap-1 mb-2 border-b pb-2">
               <button
-                key={e}
                 type="button"
-                onClick={() => { onChange(e === value ? null : e); setOpen(false) }}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent text-base ${value === e ? "bg-primary/10 ring-1 ring-primary" : ""}`}
+                onClick={() => setMode("emoji")}
+                className={`flex-1 text-xs py-1 rounded-md font-medium transition-colors ${mode === "emoji" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {e}
+                <Smile className="w-3 h-3 inline mr-1" />Emoji
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setMode("image")}
+                className={`flex-1 text-xs py-1 rounded-md font-medium transition-colors ${mode === "image" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <ImageIcon className="w-3 h-3 inline mr-1" />Image
+              </button>
+            </div>
+            {mode === "emoji" ? (
+              <div className="grid grid-cols-7 gap-1.5 max-h-48 overflow-y-auto">
+                {emojis.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => { onChange(e === value ? null : e); setOpen(false) }}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent text-base ${value === e ? "bg-primary/10 ring-1 ring-primary" : ""}`}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2 pt-1">
+                <ImageUpload value={isImage ? value! : ""} onChange={(url) => { onChange(url); setOpen(false) }} />
+                <p className="text-[10px] text-muted-foreground text-center">Max 1200px, auto-compressed</p>
+              </div>
+            )}
             {value && (
               <button
                 type="button"
-                onClick={() => { onChange(null); setOpen(false) }}
-                className="col-span-7 text-xs text-muted-foreground hover:text-foreground py-2"
+                onClick={() => { onChange(null); setOpen(false); setMode("emoji") }}
+                className="w-full text-xs text-muted-foreground hover:text-foreground py-2 mt-1 border-t"
               >
                 Remove icon
               </button>
@@ -274,12 +308,8 @@ function LinkFormModal({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL</label>
-          <Input
-            placeholder="https://example.com/image.jpg"
-            value={form.imageUrl}
-            onChange={(e) => set("imageUrl", e.target.value)}
-          />
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Image</label>
+          <ImageUpload value={form.imageUrl} onChange={(url) => set("imageUrl", url)} />
         </div>
 
         <div>

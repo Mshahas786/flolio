@@ -393,29 +393,50 @@ export function PublicProfile({
                 </p>
               )}
               <div className={isGrid ? "grid grid-cols-2 gap-2" : `flex flex-col ${activeSpacing.className}`}>
-                {sectionLinks.map((link) => (
-                  link.gateType ? (
+                {sectionLinks.map((link) => {
+                  const commonClasses = `block w-full transition-all duration-200 ${activeFontWeight.className} ${activeBorderWidth.className} ${activeShadow.className} ${activeHover.className}`
+                  const hasImage = !!link.imageUrl
+                  const cardClasses = hasImage
+                    ? `${commonClasses} rounded-xl overflow-hidden bg-white/10 ${activeShadow.className}`
+                    : `${commonClasses} py-3 px-4 text-center ${activeFontSize.className} ${activeButtonStyle.className}`
+
+                  const inner = (
+                    <>
+                      {hasImage ? (
+                        <div className="w-full">
+                          <img src={link.imageUrl || undefined} alt={link.title} className="w-full aspect-[2/1] object-cover" />
+                          <div className="py-2.5 px-4 text-center" style={{ backgroundColor: accentColor, color: buttonTextColor || "#fff", fontFamily: activeFontFamily.family }}>
+                            {link.icon && (link.icon.startsWith("http") ? <img src={link.icon} alt="" className="w-5 h-5 inline-block mr-2 rounded object-cover" /> : <span className="mr-2">{link.icon}</span>)}
+                            <span className={activeFontSize.className}>{link.title}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {link.icon && (link.icon.startsWith("http") ? <img src={link.icon} alt="" className="w-5 h-5 inline-block mr-2 rounded object-cover" /> : <span className="mr-2">{link.icon}</span>)}
+                          {link.title}
+                        </>
+                      )}
+                    </>
+                  )
+
+                  return link.gateType ? (
                     <GatedLink key={link.id} link={link} accentColor={accentColor}
                       buttonTextColor={buttonTextColor || "#fff"}
                       borderColorValue={borderColorValue}
-                      className={`block w-full py-3 px-4 text-center transition-all duration-200 ${activeFontWeight.className} ${activeBorderWidth.className} ${activeShadow.className} ${activeFontSize.className} ${activeButtonStyle.className} ${activeHover.className}`}
+                      className={cardClasses}
                     >
-                      {link.imageUrl ? <img src={link.imageUrl} alt="" className="w-5 h-5 inline-block mr-2 rounded object-cover" />
-                        : link.icon ? <span className="mr-2">{link.icon}</span> : null}
-                      {link.title}
+                      {inner}
                     </GatedLink>
                   ) : (
                     <a key={link.id} href={buildUrl(link)} target="_blank" rel="noopener noreferrer"
                       onClick={() => trackClick(link.id)}
-                      className={`block w-full py-3 px-4 text-center transition-all duration-200 active:scale-[0.98] ${activeFontWeight.className} ${activeBorderWidth.className} ${activeShadow.className} ${activeFontSize.className} ${activeButtonStyle.className} ${activeHover.className}`}
-                      style={{ backgroundColor: accentColor, color: buttonTextColor || "#fff", fontFamily: activeFontFamily.family, borderColor: borderColorValue }}
+                      className={cardClasses}
+                      style={!hasImage ? { backgroundColor: accentColor, color: buttonTextColor || "#fff", fontFamily: activeFontFamily.family, borderColor: borderColorValue } : {}}
                     >
-                      {link.imageUrl ? <img src={link.imageUrl} alt="" className="w-5 h-5 inline-block mr-2 rounded object-cover" />
-                        : link.icon ? <span className="mr-2">{link.icon}</span> : null}
-                      {link.title}
+                      {inner}
                     </a>
                   )
-                ))}
+                })}
               </div>
             </div>
           ))}
