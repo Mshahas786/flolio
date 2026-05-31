@@ -5,7 +5,9 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Crown, Image, Gift, Copy, Check, Globe } from "lucide-react"
+import { Crown, Image, Gift, Copy, Check, Globe, CreditCard } from "lucide-react"
+import { PRICE_TIERS } from "@/lib/pricing"
+import { Badge } from "@/components/ui/badge"
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -26,6 +28,9 @@ export default function SettingsPage() {
   const [domainInput, setDomainInput] = useState("")
   const [domainSaving, setDomainSaving] = useState(false)
   const [domainMessage, setDomainMessage] = useState("")
+  const [subscription, setSubscription] = useState<any>(null)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true)
+  const [upgrading, setUpgrading] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -49,6 +54,13 @@ export default function SettingsPage() {
         setReferralCount(data.referralCount)
         setBrandingUnlocked(data.brandingUnlocked)
       }
+      const subRes = await fetch("/api/subscription")
+      if (subRes.ok) {
+        const subData = await subRes.json()
+        setSubscription(subData)
+      }
+      setSubscriptionLoading(false)
+
       if (referralRes.status === 401) {
         const genRes = await fetch("/api/referral/generate")
         if (genRes.ok) {
@@ -82,6 +94,24 @@ export default function SettingsPage() {
     if (res.ok) {
       const data = await res.json()
       setReferralCode(data.referralCode)
+    }
+  }
+
+  async function upgrade() {
+    setUpgrading(true)
+    const res = await fetch("/api/subscription", { method: "POST" })
+    const data = await res.json()
+    if (data.url) {
+      window.location.href = data.url
+    }
+    setUpgrading(false)
+  }
+
+  async function manageBilling() {
+    const res = await fetch("/api/billing", { method: "POST" })
+    const data = await res.json()
+    if (data.url) {
+      window.location.href = data.url
     }
   }
 
@@ -156,6 +186,65 @@ export default function SettingsPage() {
             <p className={`text-sm ${message.includes("saved") ? "text-green-600" : "text-red-600"}`}>{message}</p>
           )}
           <Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
+            Billing &amp; Plan
+          </CardTitle>
+          <CardDescription>Manage your subscription plan</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {subscriptionLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className={`rounded-xl border p-4 space-y-3 ${isPro ? "" : "ring-2 ring-primary/30 border-primary/50"}`}>
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold">Free</p>
+                  {!isPro && <Badge>Current Plan</Badge>}
+                </div>
+                <p className="text-2xl font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+                <ul className="space-y-1.5">
+                  {PRICE_TIERS.free.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm">
+                      <Check className="w-4 h-4 text-green-500 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                {!isPro && <Button variant="outline" className="w-full" disabled>Current Plan</Button>}
+              </div>
+              <div className={`rounded-xl border p-4 space-y-3 ${isPro ? "ring-2 ring-primary/30 border-primary/50" : ""}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">Pro</p>
+                    <Crown className="w-4 h-4 text-yellow-500" />
+                  </div>
+                  {isPro && <Badge variant="success">Active</Badge>}
+                </div>
+                <p className="text-2xl font-bold">$5<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+                <ul className="space-y-1.5">
+                  {PRICE_TIERS.pro.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm">
+                      <Check className="w-4 h-4 text-green-500 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                {isPro ? (
+                  <Button variant="outline" className="w-full" onClick={manageBilling}>Manage Subscription</Button>
+                ) : (
+                  <Button className="w-full" onClick={upgrade} disabled={upgrading}>
+                    {upgrading ? "Redirecting..." : "Upgrade to Pro"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

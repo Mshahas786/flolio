@@ -10,7 +10,6 @@ import {
   Palette,
   BarChart3,
   Settings,
-  CreditCard,
   LogOut,
   ExternalLink,
   DollarSign,
@@ -31,7 +30,6 @@ const navItems = [
   { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/integrations", label: "Integrations", icon: Puzzle },
-  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
