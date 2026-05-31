@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Link as LinkIcon,
   Palette,
-  BarChart3,
   Settings,
   LogOut,
   ExternalLink,
@@ -23,7 +22,6 @@ const navItems = [
   { href: "/dashboard/links", label: "Links & Social", icon: LinkIcon },
   { href: "/dashboard/pages", label: "Pages", icon: FileText },
   { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
@@ -55,18 +53,20 @@ export function Sidebar({ username }: { username: string }) {
               </Link>
             )
           })}
-          <button
-            onClick={() => setMoreOpen(true)}
-            className="flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 flex-1 h-full text-muted-foreground"
-          >
-            <Ellipsis className="w-5 h-5" />
-            <span className="text-[10px] leading-tight truncate w-full text-center">More</span>
-          </button>
+          {moreNavItems.length > 0 && (
+            <button
+              onClick={() => setMoreOpen(true)}
+              className="flex flex-col items-center justify-center gap-0.5 px-1 min-w-0 flex-1 h-full text-muted-foreground"
+            >
+              <Ellipsis className="w-5 h-5" />
+              <span className="text-[10px] leading-tight truncate w-full text-center">More</span>
+            </button>
+          )}
         </div>
       </nav>
 
       {/* Mobile bottom sheet for More */}
-      {moreOpen && (
+      {moreNavItems.length > 0 && moreOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end" onClick={() => setMoreOpen(false)}>
           <div className="fixed inset-0 bg-black/50 animate-in fade-in duration-200" />
           <div

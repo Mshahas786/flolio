@@ -70,12 +70,23 @@ export async function PATCH(req: Request) {
   }
 
   const data = await req.json()
-  const allowed = ["name", "bio", "avatarUrl", "socialImage", "theme", "accentColor", "showBranding", "buttonStyle", "bioAlignment", "buttonTextColor", "backgroundColor", "avatarShape", "fontFamily", "fontSize", "linkBorderWidth", "linkShadow", "linkSpacing", "layoutMode", "hoverEffect", "showAvatar", "showBio", "headerImageUrl", "customCss", "isLocked", "pagePassword", "buttonBorderColor", "buttonFontWeight", "countdownTitle", "enableEmailCapture", "emailCaptureTitle", "metaTitle", "metaDescription", "ogImageUrl", "tipEnabled", "tipVenmo", "tipPayPal", "tipCashApp", "dashboardTourDone", "showInstagramGrid", "gridColumns"]
+  const allowed = ["name", "bio", "avatarUrl", "socialImage", "theme", "accentColor", "showBranding", "buttonStyle", "bioAlignment", "buttonTextColor", "backgroundColor", "avatarShape", "fontFamily", "fontSize", "linkBorderWidth", "linkShadow", "linkSpacing", "layoutMode", "hoverEffect", "showAvatar", "showBio", "headerImageUrl", "customCss", "isLocked", "pagePassword", "buttonBorderColor", "buttonFontWeight", "countdownTitle", "enableEmailCapture", "emailCaptureTitle", "metaTitle", "metaDescription", "ogImageUrl", "tipEnabled", "tipVenmo", "tipPayPal", "tipCashApp", "dashboardTourDone", "showInstagramGrid", "gridColumns", "username"]
 
   const updateData: Record<string, any> = {}
   for (const key of allowed) {
     if (data[key] !== undefined) {
       updateData[key] = data[key]
+    }
+  }
+
+  if (data.username !== undefined) {
+    const username = data.username
+    if (!username || !username.match(/^[a-zA-Z0-9_]{3,20}$/)) {
+      return NextResponse.json({ error: "Invalid username format (3-20 chars, letters, numbers, underscores)" }, { status: 400 })
+    }
+    const existing = await prisma.user.findUnique({ where: { username } })
+    if (existing && existing.id !== session.user.id) {
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 })
     }
   }
   if (data.countdownDate !== undefined) {

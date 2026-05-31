@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,9 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("")
   const [avatarUrl, setAvatarUrl] = useState("")
   const [socialImage, setSocialImage] = useState("")
+  const [username, setUsername] = useState("")
+  const [usernameAvail, setUsernameAvail] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
+  const usernameDebounce = useRef<ReturnType<typeof setTimeout>>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
@@ -48,6 +51,20 @@ export default function SettingsPage() {
   ]
 
   useEffect(() => {
+    if (usernameDebounce.current) clearTimeout(usernameDebounce.current)
+    const val = username
+    if (!val || val === (session?.user as any)?.username) { setUsernameAvail("idle"); return }
+    if (!val.match(/^[a-zA-Z0-9_]{3,20}$/)) { setUsernameAvail("invalid"); return }
+    setUsernameAvail("checking")
+    usernameDebounce.current = setTimeout(async () => {
+      const res = await fetch(`/api/username-check?username=${encodeURIComponent(val)}`)
+      const data = await res.json()
+      setUsernameAvail(data.available ? "available" : "taken")
+    }, 400)
+    return () => { if (usernameDebounce.current) clearTimeout(usernameDebounce.current) }
+  }, [username, session])
+
+  useEffect(() => {
     async function load() {
       const [settingsRes, referralRes] = await Promise.all([
         fetch("/api/settings"),
@@ -59,6 +76,7 @@ export default function SettingsPage() {
         setBio(data.bio || "")
         setAvatarUrl(data.avatarUrl || "")
         setSocialImage(data.socialImage || "")
+        setUsername(data.username || "")
         setCustomDomain(data.customDomain || "")
         setDomainVerified(data.domainVerified || false)
         setDomainInput(data.customDomain || "")
@@ -100,12 +118,14 @@ export default function SettingsPage() {
     const res = await fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, bio, avatarUrl, socialImage }),
+      body: JSON.stringify({ name, bio, avatarUrl, socialImage, username }),
     })
     if (res.ok) {
       setMessage("Settings saved!")
+      setUsernameAvail("idle")
     } else {
-      setMessage("Failed to save settings")
+      const err = await res.json()
+      setMessage(err.error || "Failed to save settings")
     }
     setSaving(false)
   }
@@ -203,6 +223,24 @@ export default function SettingsPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Display Name</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Username</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">flolio.com/</span>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="username"
+                className="pl-[5.5rem]"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                {usernameAvail === "checking" && <span className="w-4 h-4 rounded-full border-2 border-muted-foreground border-t-transparent animate-spin inline-block" />}
+                {usernameAvail === "available" && <span className="text-green-500 text-sm">Available</span>}
+                {usernameAvail === "taken" && <span className="text-red-500 text-sm">Taken</span>}
+                {usernameAvail === "invalid" && <span className="text-red-500 text-sm">3-20 chars, letters, numbers, underscores</span>}
+              </span>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Bio</label>
