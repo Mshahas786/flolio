@@ -149,11 +149,19 @@ function SortableLinkCard({
           <GripVertical className="w-4 h-4 text-muted-foreground" />
         </button>
         <EmojiPicker value={link.icon} onChange={(icon) => onUpdateLink(link.id, { icon })} />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{link.title}</p>
-          <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+        <div className="flex-1 min-w-0 space-y-1">
+          <Input
+            value={link.title}
+            onChange={(e) => onUpdateLink(link.id, { title: e.target.value })}
+            className="h-7 text-sm font-medium"
+          />
+          <Input
+            value={link.url}
+            onChange={(e) => onUpdateLink(link.id, { url: e.target.value })}
+            className="h-7 text-xs text-muted-foreground"
+          />
           {link.section && (
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded mt-0.5 inline-block">{link.section}</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded inline-block">{link.section}</span>
           )}
         </div>
         <div className="flex items-start gap-1 shrink-0">
