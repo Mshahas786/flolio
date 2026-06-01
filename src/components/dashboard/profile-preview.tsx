@@ -65,7 +65,7 @@ export function ProfilePreview(props: ProfilePreviewProps) {
   } = props
 
   return (
-    <div className="sticky top-4 hidden lg:block">
+    <div className="sticky top-4 self-start hidden lg:block">
       <div className="relative mx-auto w-[360px]">
         <div className="absolute inset-0 rounded-[3rem] border-[4px] border-gray-800 shadow-xl pointer-events-none" />
         <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-2 bg-gray-800 rounded-full z-10 pointer-events-none" />

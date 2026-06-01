@@ -316,7 +316,7 @@ export default function AppearancePage() {
   }
 
   return (
-    <div className="lg:flex lg:gap-6">
+    <div className="lg:flex lg:gap-6 lg:items-start">
       <div className="flex-1 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Appearance</h1>
@@ -325,10 +325,10 @@ export default function AppearancePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Theme</CardTitle>
-          <CardDescription>Choose a background style for your page</CardDescription>
+          <CardTitle className="text-lg">Theme & Background</CardTitle>
+          <CardDescription>Choose a background style or solid color for your page</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {themes.map((t) => {
               const isProTheme = proThemes.includes(t.id)
@@ -365,51 +365,48 @@ export default function AppearancePage() {
             })}
           </div>
           {!isPro && (
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="text-xs text-muted-foreground">
               <Crown className="w-3 h-3 inline mr-1 text-yellow-500" />
               5 additional themes available on the Pro plan.
             </p>
           )}
-        </CardContent>
-      </Card>
-
-      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center">
-            Custom Background Color
-            <ProBadge />
-          </CardTitle>
-          <CardDescription>Override the theme with a solid background color</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: backgroundColor || "#ffffff" }} />
-            <Input
-              value={backgroundColor}
-              onChange={(e) => setBackgroundColor(e.target.value)}
-              placeholder="#ffffff"
-              className="w-32"
-            />
-            {backgroundColor && (
-              <button onClick={() => setBackgroundColor("")} className="text-xs text-muted-foreground underline">
-                Clear
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {["#ffffff", "#f3f4f6", "#fef3c7", "#ede9fe", "#dbeafe", "#fce7f3", "#ecfdf5", "#1e1b4b", "#0f172a", "#1c1917"].map((color) => (
-              <button
-                key={color}
-                onClick={() => setBackgroundColor(color)}
-                className={`w-8 h-8 rounded-full border-2 transition-all ${
-                  backgroundColor === color ? "border-gray-900 scale-110" : "border-gray-200"
-                }`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
+          <hr className="border-gray-200" />
+          <div className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-sm font-medium">Custom Background Color</h4>
+              <ProBadge />
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: backgroundColor || "#ffffff" }} />
+                <Input
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  placeholder="#ffffff"
+                  className="w-32"
+                />
+                {backgroundColor && (
+                  <button onClick={() => setBackgroundColor("")} className="text-xs text-muted-foreground underline">
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {["#ffffff", "#f3f4f6", "#fef3c7", "#ede9fe", "#dbeafe", "#fce7f3", "#ecfdf5", "#1e1b4b", "#0f172a", "#1c1917"].map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setBackgroundColor(color)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      backgroundColor === color ? "border-gray-900 scale-110" : "border-gray-200"
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+            {!isPro && <ProLock />}
           </div>
         </CardContent>
-        {!isPro && <ProLock />}
       </Card>
 
       <Card>

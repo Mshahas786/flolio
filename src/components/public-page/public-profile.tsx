@@ -532,7 +532,7 @@ export function PublicProfile({
 
       </div>
 
-      {showBranding && (
+      {showBranding && !preview && (
         <div className={`fixed bottom-0 left-0 right-0 py-3 text-center border-t border-gray-200/30 ${bgGradient}`}
           style={{ ...bgStyle, backdropFilter: "blur(8px)" }}
         >
