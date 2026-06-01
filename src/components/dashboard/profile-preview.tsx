@@ -66,23 +66,10 @@ export function ProfilePreview(props: ProfilePreviewProps) {
 
   return (
     <div className="sticky top-4 self-start hidden lg:block">
-      {/* Side buttons */}
-      <div className="absolute -left-[3px] top-24 w-[3px] h-8 bg-gray-700 rounded-r-sm pointer-events-none z-20" />
-      <div className="absolute -left-[3px] top-36 w-[3px] h-12 bg-gray-700 rounded-r-sm pointer-events-none z-20" />
-      <div className="absolute -left-[3px] top-52 w-[3px] h-12 bg-gray-700 rounded-r-sm pointer-events-none z-20" />
-      <div className="absolute -right-[3px] top-32 w-[3px] h-14 bg-gray-700 rounded-l-sm pointer-events-none z-20" />
-
       <div className="relative mx-auto w-[360px]">
-        {/* Phone frame */}
-        <div className="absolute inset-0 rounded-[3.5rem] border-[6px] border-gray-800 shadow-2xl pointer-events-none" />
-        {/* Screen bezel shine */}
-        <div className="absolute inset-[3px] rounded-[3.2rem] border border-gray-600/30 pointer-events-none" />
-        {/* Dynamic Island */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[100px] h-[30px] bg-gray-800 rounded-[20px] z-10 pointer-events-none shadow-sm" />
-        <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rounded-full z-10 pointer-events-none" />
-        {/* Screen */}
-        <div className="pt-[38px] pb-3 px-[3px]">
-          <div className="w-full h-[740px] overflow-y-auto rounded-[2.8rem] bg-white scrollbar-thin">
+        <div className="absolute inset-0 rounded-[2.5rem] border-[4px] border-gray-800 shadow-xl pointer-events-none" />
+        <div className="pt-4 pb-3 px-[3px]">
+          <div className="w-full h-[640px] overflow-y-auto rounded-[2.2rem] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <PublicProfile
               name={name}
               bio={bio}
