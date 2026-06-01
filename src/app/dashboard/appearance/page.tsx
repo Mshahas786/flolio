@@ -159,12 +159,12 @@ export default function AppearancePage() {
         layoutMode, hoverEffect, showAvatar, showBio,
         isLocked, pagePassword, buttonFontWeight, enableEmailCapture, emailCaptureTitle, countdownTitle,
         metaTitle, metaDescription, ogImageUrl, tipEnabled, tipVenmo, tipPayPal, tipCashApp,
+        headerImageUrl: headerImageUrl || null,
       }
       if (isPro) {
         body.buttonTextColor = buttonTextColor
         body.avatarShape = avatarShape
         body.backgroundColor = backgroundColor || null
-        body.headerImageUrl = headerImageUrl || null
         body.customCss = customCss || null
         body.buttonBorderColor = buttonBorderColor || null
         body.countdownDate = countdownDate || null
@@ -221,12 +221,12 @@ export default function AppearancePage() {
       layoutMode, hoverEffect, showAvatar, showBio,
       isLocked, pagePassword, buttonFontWeight, enableEmailCapture, emailCaptureTitle, countdownTitle,
       metaTitle, metaDescription, ogImageUrl, tipEnabled, tipVenmo, tipPayPal, tipCashApp,
+      headerImageUrl: headerImageUrl || null,
     }
     if (isPro) {
       body.buttonTextColor = buttonTextColor
       body.avatarShape = avatarShape
       body.backgroundColor = backgroundColor || null
-      body.headerImageUrl = headerImageUrl || null
       body.customCss = customCss || null
       body.buttonBorderColor = buttonBorderColor || null
       body.countdownDate = countdownDate || null
@@ -725,12 +725,11 @@ export default function AppearancePage() {
         </CardContent>
       </Card>
 
-      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Image className="w-5 h-5 text-primary" />
             Header Image
-            <ProBadge />
           </CardTitle>
           <CardDescription>Add a banner image at the top of your page</CardDescription>
         </CardHeader>
@@ -754,7 +753,6 @@ export default function AppearancePage() {
             </p>
           </div>
         </CardContent>
-        {!isPro && <ProLock />}
       </Card>
 
       <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
