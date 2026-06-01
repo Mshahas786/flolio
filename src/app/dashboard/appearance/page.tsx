@@ -325,10 +325,10 @@ export default function AppearancePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Theme & Background</CardTitle>
-          <CardDescription>Choose a background style or solid color for your page</CardDescription>
+          <CardTitle className="text-lg">Theme</CardTitle>
+          <CardDescription>Choose a design system for your page — includes background, text colors, and overall style</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {themes.map((t) => {
               const isProTheme = proThemes.includes(t.id)
@@ -365,48 +365,51 @@ export default function AppearancePage() {
             })}
           </div>
           {!isPro && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-3">
               <Crown className="w-3 h-3 inline mr-1 text-yellow-500" />
               5 additional themes available on the Pro plan.
             </p>
           )}
-          <hr className="border-gray-200" />
-          <div className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
-            <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-medium">Custom Background Color</h4>
-              <ProBadge />
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: backgroundColor || "#ffffff" }} />
-                <Input
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
-                  placeholder="#ffffff"
-                  className="w-32"
-                />
-                {backgroundColor && (
-                  <button onClick={() => setBackgroundColor("")} className="text-xs text-muted-foreground underline">
-                    Clear
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {["#ffffff", "#f3f4f6", "#fef3c7", "#ede9fe", "#dbeafe", "#fce7f3", "#ecfdf5", "#1e1b4b", "#0f172a", "#1c1917"].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setBackgroundColor(color)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      backgroundColor === color ? "border-gray-900 scale-110" : "border-gray-200"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-            {!isPro && <ProLock />}
+        </CardContent>
+      </Card>
+
+      <Card className={!isPro ? "relative opacity-60 pointer-events-none select-none" : ""}>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            Custom Background Color
+            <ProBadge />
+          </CardTitle>
+          <CardDescription>Override your theme with a solid background color of your choice</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg border-2 border-gray-200" style={{ backgroundColor: backgroundColor || "#ffffff" }} />
+            <Input
+              value={backgroundColor}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              placeholder="#ffffff"
+              className="w-32"
+            />
+            {backgroundColor && (
+              <button onClick={() => setBackgroundColor("")} className="text-xs text-muted-foreground underline">
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {["#ffffff", "#f3f4f6", "#fef3c7", "#ede9fe", "#dbeafe", "#fce7f3", "#ecfdf5", "#1e1b4b", "#0f172a", "#1c1917"].map((color) => (
+              <button
+                key={color}
+                onClick={() => setBackgroundColor(color)}
+                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                  backgroundColor === color ? "border-gray-900 scale-110" : "border-gray-200"
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
           </div>
         </CardContent>
+        {!isPro && <ProLock />}
       </Card>
 
       <Card>
@@ -1134,8 +1137,14 @@ export default function AppearancePage() {
               className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 bg-white z-10 pt-3 pb-2">
-                <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto" />
+              <div className="sticky top-0 bg-white z-10 pt-3 pb-2 flex items-center justify-center">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                <button
+                  onClick={() => setShowMobilePreview(false)}
+                  className="absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               </div>
               <div className="px-2 pb-6">
                 <PublicProfile
