@@ -66,7 +66,7 @@ export function ProfilePreview(props: ProfilePreviewProps) {
 
   return (
     <div className="sticky top-4 self-start hidden lg:block">
-      <div className="relative mx-auto w-[340px]">
+      <div className="relative mx-auto w-[300px]">
         <div className="absolute inset-0 rounded-[2.5rem] border-[4px] border-gray-800 shadow-xl pointer-events-none" />
         <div className="pt-4 pb-3 px-[3px]">
           <div className="w-full h-[640px] overflow-y-auto rounded-[2.2rem] bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
