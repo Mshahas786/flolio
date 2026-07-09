@@ -65,18 +65,31 @@ model User {
   showInstagramGrid Boolean @default(false)
   gridColumns       Int     @default(2)
 
-  referredBy   User?  @relation("Referrals", fields: [referredById], references: [id])
-  referrals    User[] @relation("Referrals")
-  accounts     Account[]
-  sessions     Session[]
-  links        Link[]
-  socialLinks  SocialLink[]
-  subscription Subscription?
-  subscribers   Subscriber[]
-  products      Product[]
-  embeds        Embed[]
-  pages         Page[]
-  integrations  Integration[]
+  referredBy       User?            @relation("Referrals", fields: [referredById], references: [id])
+  referrals        User[]           @relation("Referrals")
+  accounts         Account[]
+  sessions         Session[]
+  links            Link[]
+  socialLinks      SocialLink[]
+  subscription     Subscription?
+  subscribers      Subscriber[]
+  products         Product[]
+  embeds           Embed[]
+  pages            Page[]
+  integrations     Integration[]
+  collections      LinkCollection[]
+  smartLinks       SmartLink[]
+  newsletters      Newsletter[]
+  bookings         Booking[]
+  teamOwned        TeamMember[]     @relation("TeamOwnership")
+  teamMemberships  TeamMember[]     @relation("TeamMembership")
+  socialProof      SocialProof[]
+  analyticsEvents  AnalyticsEvent[]
+  qrCodes          QRCode[]
+  webhooks         Webhook[]
+  affiliateLinks   AffiliateLink[]
+  fileAttachments  FileAttachment[]
+  linkComments     LinkComment[]
 }
 
 model Account {
@@ -115,7 +128,7 @@ model VerificationToken {
 }
 
 model Link {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
   title       String
   url         String
@@ -133,13 +146,21 @@ model Link {
   utmContent  String?
   gateType    String?   // subscribe, code, none
   gateValue   String?   // the code for code-lock
+  collectionId String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   pageId      String?
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clickLogs ClickLog[]
-  page      Page?      @relation(fields: [pageId], references: [id])
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clickLogs  ClickLog[]
+  collection LinkCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  page       Page?      @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  smartLinks SmartLinkItem[]
+  affiliateLinks AffiliateLink[]
+  comments   LinkComment[]
+  attachments FileAttachment[]
+  analytics  AnalyticsEvent[]
+  qrCodes    QRCode[]
 }
 
 model ClickLog {
@@ -254,6 +275,62 @@ model Page {
   @@unique([userId, slug])
 }
 
+model LinkCollection {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  slug      String
+  description String?
+  color     String   @default("#6366f1")
+  icon      String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links Link[]
+
+  @@unique([userId, slug])
+}
+
+model SmartLink {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  slug        String
+  description String?
+  type        String   @default("rotation") // rotation, geo, device, ab_test, schedule
+  config      Json     // routing rules, weights, geo rules, etc.
+  isActive    Boolean  @default(true)
+  clicks      Int      @default(0)
+  conversions Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items SmartLinkItem[]
+
+  @@unique([userId, slug])
+}
+
+model SmartLinkItem {
+  id         String   @id @default(cuid())
+  smartLinkId String
+  linkId     String
+  weight     Int      @default(100) // for rotation
+  country    String?  // for geo routing
+  device     String?  // for device routing: mobile, desktop, tablet
+  variant    String?  // for A/B testing: A, B
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  smartLink SmartLink @relation(fields: [smartLinkId], references: [id], onDelete: Cascade)
+  link      Link      @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([smartLinkId, linkId])
+}
+
 model Integration {
   id        String   @id @default(cuid())
   userId    String
@@ -267,4 +344,248 @@ model Integration {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider])
+}
+
+model Newsletter {
+  id              String   @id @default(cuid())
+  userId          String
+  provider        String   // mailchimp, convertkit, beehiiv, kit, buttdown, custom
+  apiKey          String?
+  listId          String?
+  listName        String?
+  isConnected     Boolean  @default(false)
+  doubleOptIn     Boolean  @default(true)
+  customFields    Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscribers  NewsletterSub[]
+
+  @@unique([userId, provider])
+}
+
+model NewsletterSub {
+  id           String   @id @default(cuid())
+  newsletterId String
+  email        String
+  name         String?
+  status       String   @default("subscribed") // subscribed, unsubscribed, pending
+  source       String?  // link, page, embed, manual
+  metadata     Json?
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+
+  newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+
+  @@unique([newsletterId, email])
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String   // calendly, calcom, savvycal, custom
+  url          String
+  embedCode    String?
+  title        String
+  description  String?
+  duration     Int      // minutes
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings BookingLog[]
+
+  @@unique([userId, provider])
+}
+
+model BookingLog {
+  id          String   @id @default(cuid())
+  bookingId   String
+  email       String
+  name        String
+  startTime   DateTime
+  endTime     DateTime
+  status      String   @default("confirmed") // confirmed, cancelled, completed, no_show
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  userId    String   // owner
+  memberId  String   // team member user
+  role      String   @default("editor") // owner, admin, editor, viewer, analyst
+  status    String   @default("pending") // pending, active, revoked
+  invitedAt DateTime @default(now())
+  acceptedAt DateTime?
+
+  user   User @relation("TeamOwnership", fields: [userId], references: [id], onDelete: Cascade)
+  member User @relation("TeamMembership", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, memberId])
+}
+
+model SocialProof {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // testimonial, review, tweet, video, logo, metric
+  authorName  String
+  authorRole  String?
+  authorImage String?
+  content     String
+  rating      Int?     // 1-5
+  sourceUrl   String?
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  linkId    String?
+  event     String   // page_view, link_click, email_capture, product_view, product_buy, embed_play, social_click, qr_scan
+  metadata  Json?
+  sessionId String?
+  country   String?
+  device    String?
+  referrer  String?
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link? @relation(fields: [linkId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([linkId, timestamp])
+}
+
+model QRCode {
+  id        String   @id @default(cuid())
+  userId    String
+  linkId    String?
+  type      String   // profile, link, custom
+  label     String
+  data      String   // the actual URL/data encoded
+  scans     Int      @default(0)
+  style     Json?    // colors, logo, shape, etc.
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link? @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  qrScans QRScan[]
+}
+
+model QRScan {
+  id        String   @id @default(cuid())
+  qrCodeId  String
+  country   String?
+  device    String?
+  referrer  String?
+  timestamp DateTime @default(now())
+
+  qrCode QRCode @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  events    String[] // click, subscribe, purchase, booking, etc.
+  secret    String
+  isActive  Boolean  @default(true)
+  retries   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs WebhookLog[]
+}
+
+model WebhookLog {
+  id        String   @id @default(cuid())
+  webhookId String
+  event     String
+  payload   Json
+  status    String   // success, failed, retrying
+  response  String?
+  attempts  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+}
+
+model AffiliateLink {
+  id        String   @id @default(cuid())
+  userId    String   // the affiliate (creator)
+  linkId    String   // the link being promoted
+  code      String   @unique // unique affiliate code
+  commissionRate Int   @default(10) // percentage
+  clicks    Int      @default(0)
+  conversions Int    @default(0)
+  earnings  Int      @default(0) // in cents
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  affiliateClicks AffiliateClick[]
+}
+
+model AffiliateClick {
+  id            String   @id @default(cuid())
+  affiliateId   String
+  referrerId    String?  // who referred this click
+  timestamp     DateTime @default(now())
+  converted     Boolean  @default(false)
+  conversionAt  DateTime?
+  amount        Int?     // in cents
+  device        String?
+  country       String?
+  referrer      String?
+
+  affiliate AffiliateLink @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+}
+
+model FileAttachment {
+  id        String   @id @default(cuid())
+  userId    String
+  linkId    String?
+  name      String
+  url       String
+  type      String   // pdf, image, video, audio, zip, other
+  size      Int      // bytes
+  downloads Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link? @relation(fields: [linkId], references: [id], onDelete: SetNull)
+}
+
+model LinkComment {
+  id        String   @id @default(cuid())
+  linkId    String
+  userId    String?  // null for anonymous
+  name      String   // for anonymous
+  email     String?  // for anonymous
+  content   String
+  isApproved Boolean @default(true)
+  parentId  String?  // for replies
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  link   Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  user   User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent LinkComment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies LinkComment[] @relation("CommentReplies")
 }
