@@ -1,79 +1,220 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
+import * as React from "react";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+interface ModalProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  size?: "sm" | "md" | "lg" | "xl" | "full";
+  showClose?: boolean;
+  closeOnOverlayClick?: boolean;
+  className?: string;
+}
+
+const sizeClasses = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  full: "max-w-4xl",
+};
 
 export function Modal({
   open,
   onClose,
   title,
+  description,
   children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  const overlayRef = useRef<HTMLDivElement>(null)
+  size = "md",
+  showClose = true,
+  closeOnOverlayClick = true,
+  className,
+}: ModalProps) {
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const previousActiveElement = React.useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (open) {
-      document.body.style.overflow = "hidden"
+      previousActiveElement.current = document.activeElement as HTMLElement;
+      document.body.style.overflow = "hidden";
+      contentRef.current?.focus();
     } else {
-      document.body.style.overflow = ""
+      document.body.style.overflow = "";
+      previousActiveElement.current?.focus();
     }
-    return () => { document.body.style.overflow = "" }
-  }, [open])
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Escape") onClose();
     }
     if (open) {
-      document.addEventListener("keydown", handleEscape)
-      return () => document.removeEventListener("keydown", handleEscape)
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
     }
-  }, [open, onClose])
+  }, [open, onClose]);
 
-  if (!open) return null
+  function handleOverlayClick(e: React.MouseEvent) {
+    if (e.target === overlayRef.current && closeOnOverlayClick) {
+      onClose();
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Tab") {
+      const focusableElements = contentRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusableElements?.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    }
+  }
+
+  if (!open) return null;
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      className="fixed inset-0 z-[500] flex items-center justify-center p-4"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? "modal-title" : undefined}
+      aria-describedby={description ? "modal-description" : undefined}
     >
-      {/* Backdrop with fade-in */}
-      <div className="fixed inset-0 bg-black/50 animate-in fade-in duration-200" />
-
-      {/* Sheet: slides up on mobile, centered on desktop */}
       <div
-        className="relative z-10 w-full md:max-w-lg bg-card border md:rounded-xl shadow-2xl max-h-[85vh] md:max-h-[80vh] flex flex-col md:mb-0 animate-in slide-in-from-bottom duration-300 md:slide-in-from-bottom-0"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+        aria-hidden="true"
+      />
+      <div
+        ref={contentRef}
+        tabIndex={-1}
+        className={cn(
+          "relative z-10 w-full bg-white rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300 ease-out",
+          "dark:bg-neutral-950 dark:border dark:border-neutral-800",
+          sizeClasses[size],
+          "max-h-[85vh] flex flex-col",
+          "sm:max-h-[80vh]",
+          className
+        )}
+        onKeyDown={handleKeyDown}
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        {/* Drag handle (mobile only) */}
-        <div className="flex justify-center pt-2 pb-1 md:hidden shrink-0">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        <div className="flex items-start justify-between p-5 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+          <div>
+            <h2 id="modal-title" className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              {title}
+            </h2>
+            {description && (
+              <p id="modal-description" className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                {description}
+              </p>
+            )}
+          </div>
+          {showClose && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              className="flex-shrink-0 ml-4"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          )}
         </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 md:py-4 border-b shrink-0 min-h-[52px]">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Close"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5">
           {children}
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+interface ConfirmModalProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: "destructive" | "primary" | "warning";
+  loading?: boolean;
+}
+
+export function ConfirmModal({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  variant = "primary",
+  loading = false,
+}: ConfirmModalProps) {
+  return (
+    <Modal open={open} onClose={onClose} title={title} size="sm">
+      <p className="text-neutral-600 dark:text-neutral-400 mb-6">{message}</p>
+      <div className="flex gap-3 justify-end">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          disabled={loading}
+        >
+          {cancelText}
+        </Button>
+        <Button
+          variant={variant === "destructive" ? "destructive" : variant === "warning" ? "warning" : "default"}
+          onClick={onConfirm}
+          loading={loading}
+          loadingText={confirmText}
+        >
+          {confirmText}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+interface AlertModalProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  buttonText?: string;
+}
+
+export function AlertModal({ open, onClose, title, message, buttonText = "OK" }: AlertModalProps) {
+  return (
+    <Modal open={open} onClose={onClose} title={title} size="sm">
+      <p className="text-neutral-600 dark:text-neutral-400 mb-6">{message}</p>
+      <div className="flex justify-end">
+        <Button onClick={onClose}>
+          {buttonText}
+        </Button>
+      </div>
+    </Modal>
+  );
 }

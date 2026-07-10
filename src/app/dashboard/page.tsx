@@ -5,7 +5,10 @@ import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Link as LinkIcon, MousePointerClick, Crown, QrCode, ExternalLink, X } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
+import { SkeletonCard, SkeletonText } from "@/components/ui/skeleton"
+import { Link as LinkIcon, MousePointerClick, Crown, QrCode, ExternalLink } from "lucide-react"
+import Link from "next/link"
 
 interface LinkData {
   id: string
@@ -85,11 +88,18 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground text-sm">Loading...</p>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <SkeletonText lines={1} />
+                  <div className="h-2 rounded-full bg-muted" />
+                </div>
+              ))}
+            </div>
           ) : links.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               No links yet.{" "}
-              <a href="/dashboard/links" className="text-primary hover:underline">Add your first link</a>
+              <Link href="/dashboard/links" className="text-primary hover:underline">Add your first link</Link>
             </p>
           ) : (
             <div className="space-y-4">
@@ -121,7 +131,7 @@ export default function DashboardPage() {
                       </a>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div
                       className="bg-primary h-2 rounded-full transition-all"
                       style={{ width: `${(link.clicks / maxClicks) * 100}%` }}
@@ -168,35 +178,27 @@ export default function DashboardPage() {
       </Card>
 
       {qrLink && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setQrLink(null)}>
-          <Card className="max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">QR Code</CardTitle>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setQrLink(null)}>
-                <X className="w-4 h-4" />
+        <Modal open={!!qrLink} onClose={() => setQrLink(null)} title="QR Code" size="sm">
+          <div className="text-center space-y-4">
+            <p className="text-sm font-medium">{qrLink.title}</p>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrLink.url)}`}
+              alt={`QR for ${qrLink.title}`}
+              className="mx-auto rounded-lg"
+            />
+            <a
+              href={`https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(qrLink.url)}`}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm" className="w-full">
+                <QrCode className="w-4 h-4 mr-2" />
+                Download QR Code
               </Button>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-sm font-medium">{qrLink.title}</p>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrLink.url)}`}
-                alt={`QR for ${qrLink.title}`}
-                className="mx-auto rounded-lg"
-              />
-              <a
-                href={`https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(qrLink.url)}`}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" size="sm" className="w-full">
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Download QR Code
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        </div>
+            </a>
+          </div>
+        </Modal>
       )}
     </div>
   )
