@@ -11,23 +11,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { username, templateId } = await req.json()
+  const { templateId, includeContent } = await req.json()
 
-  if (!username || !username.match(/^[a-zA-Z0-9_]{3,20}$/)) {
-    return NextResponse.json({ error: "Invalid username format" }, { status: 400 })
+  const template = getTemplate(templateId)
+  if (!template) {
+    return NextResponse.json({ error: "Template not found" }, { status: 404 })
   }
 
-  const existing = await prisma.user.findUnique({ where: { username } })
-  if (existing && existing.id !== session.user.id) {
-    return NextResponse.json({ error: "Username already taken" }, { status: 409 })
-  }
+  const a = template.appearance
 
-  const data: any = { username }
-
-  const template = templateId ? getTemplate(templateId) : undefined
-  if (template) {
-    const a = template.appearance
-    Object.assign(data, {
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
       theme: a.theme,
       accentColor: a.accentColor,
       buttonStyle: a.buttonStyle,
@@ -42,21 +37,25 @@ export async function POST(req: Request) {
       ...(a.buttonTextColor ? { buttonTextColor: a.buttonTextColor } : {}),
       ...(a.backgroundColor ? { backgroundColor: a.backgroundColor } : {}),
       ...(a.avatarShape ? { avatarShape: a.avatarShape } : {}),
+      ...(a.showAvatar !== undefined ? { showAvatar: a.showAvatar } : {}),
+      ...(a.showBio !== undefined ? { showBio: a.showBio } : {}),
       ...(a.buttonFontWeight ? { buttonFontWeight: a.buttonFontWeight } : {}),
-    })
-  }
-
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data,
+    },
   })
 
-  if (template) {
+  let seededLinks = 0
+  let seededSocial = 0
+
+  if (includeContent) {
     const [linkCount, socialCount] = await Promise.all([
       prisma.link.count({ where: { userId: session.user.id } }),
       prisma.socialLink.count({ where: { userId: session.user.id } }),
     ])
-    if (linkCount === 0 && template.links.length > 0) {
+
+    const seedingLinks = linkCount === 0 && template.links.length > 0
+    const seedingSocial = socialCount === 0 && template.social.length > 0
+
+    if (seedingLinks) {
       await prisma.link.createMany({
         data: template.links.map((l, i) => ({
           userId: session.user.id,
@@ -68,9 +67,13 @@ export async function POST(req: Request) {
           isActive: true,
         })),
       })
+      seededLinks = template.links.length
     }
-    if (socialCount === 0 && template.social.length > 0) {
-      const valid = template.social.filter((s) => socialPlatforms.some((p) => p.id === s.platform))
+
+    if (seedingSocial) {
+      const valid = template.social.filter((s) =>
+        socialPlatforms.some((p) => p.id === s.platform)
+      )
       if (valid.length > 0) {
         await prisma.socialLink.createMany({
           data: valid.map((s, i) => {
@@ -84,9 +87,15 @@ export async function POST(req: Request) {
             }
           }),
         })
+        seededSocial = valid.length
       }
     }
   }
 
-  return NextResponse.json({ success: true, username })
+  return NextResponse.json({
+    success: true,
+    seededLinks,
+    seededSocial,
+    seeded: seededLinks > 0 || seededSocial > 0,
+  })
 }

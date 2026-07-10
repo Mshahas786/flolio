@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
 import { SkeletonCard, SkeletonText } from "@/components/ui/skeleton"
-import { Link as LinkIcon, MousePointerClick, Crown, QrCode, ExternalLink } from "lucide-react"
+import { Link as LinkIcon, MousePointerClick, Crown, QrCode, ExternalLink, Sparkles, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 interface LinkData {
@@ -46,6 +46,30 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back! Here&apos;s your overview.</p>
       </div>
+
+      {links.length === 0 && (
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.06] to-primary/[0.02]">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-semibold">Start with a pre-made template</p>
+                <p className="text-sm text-muted-foreground mt-0.5 max-w-md">
+                  Pick a template for your niche and we&apos;ll set your style and drop in a few starter links — you can change everything later.
+                </p>
+              </div>
+            </div>
+            <Link href="/dashboard/appearance" className="shrink-0">
+              <Button>
+                Browse Templates
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

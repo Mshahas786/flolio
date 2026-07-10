@@ -327,7 +327,7 @@ export function PublicProfile({
   }
 
   return (
-    <div className={`min-h-screen ${bgGradient} px-4 pb-16`} style={bgStyle}>
+    <div className={`min-h-screen ${bgGradient} px-4 ${showBranding && !preview ? "pb-24" : "pb-16"} animate-in fade-in-0 duration-500`} style={bgStyle}>
       {!preview && <AnalyticsScripts integrations={integrations} />}
       {customCss && <style>{customCss}</style>}
       <div className={`max-w-md mx-auto pt-12 ${bioAlignment === "left" ? "text-left" : "text-center"}`}>
@@ -336,12 +336,12 @@ export function PublicProfile({
         )}
         {showAvatar && avatarUrl && (
           <img src={avatarUrl} alt={name}
-            className={`w-24 h-24 mx-auto mb-4 object-cover border-4 shadow-lg ${activeAvatarShape.className} ${bioAlignment === "left" ? "ml-0" : ""}`}
+            className={`w-24 h-24 mx-auto mb-4 object-cover border-4 shadow-lg ring-4 ring-white/40 ${activeAvatarShape.className} ${bioAlignment === "left" ? "ml-0" : ""}`}
             style={{ borderColor: accentColor }}
           />
         )}
         <h1 className={`font-heading text-2xl font-bold mb-1 ${activeTheme.textClass}`}>{name}</h1>
-        {showBio && bio && <p className="text-gray-600 mb-4">{bio}</p>}
+        {showBio && bio && <p className="text-gray-600 mb-4 leading-relaxed">{bio}</p>}
 
         {countdownDate && countdownTitle && (
           <div className="mb-6">
@@ -369,19 +369,21 @@ export function PublicProfile({
         )}
 
         {showPageNav && (
-          <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 justify-center">
-            <button onClick={() => setCurrentPage("main")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                currentPage === "main" ? "bg-primary/20 text-primary" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >Main</button>
-            {pages.map((p) => (
-              <button key={p.id} onClick={() => setCurrentPage(p.slug)}
+          <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 justify-center sticky top-2 z-20 mx-auto w-fit max-w-full px-1">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/60 dark:bg-black/20 backdrop-blur border border-white/40 shadow-sm">
+              <button onClick={() => setCurrentPage("main")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                  currentPage === p.slug ? "bg-primary/20 text-primary" : "text-gray-500 hover:text-gray-700"
+                  currentPage === "main" ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                 }`}
-              >{p.title}</button>
-            ))}
+              >Main</button>
+              {pages.map((p) => (
+                <button key={p.id} onClick={() => setCurrentPage(p.slug)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                    currentPage === p.slug ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                  }`}
+                >{p.title}</button>
+              ))}
+            </div>
           </div>
         )}
 

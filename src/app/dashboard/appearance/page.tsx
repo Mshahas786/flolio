@@ -39,6 +39,7 @@ import {
   CheckCheck,
   Zap,
   RefreshCw,
+  Shuffle,
 } from "lucide-react";
 import { themes, proThemes, buttonStyles, avatarShapes, alignmentOptions } from "@/lib/themes";
 import {
@@ -51,8 +52,9 @@ import {
   hoverEffects,
   fontWeightOptions,
   colorHarmonies,
-  quickStylePresets,
 } from "@/lib/customization";
+import { templates } from "@/lib/templates";
+import type { Template } from "@/lib/templates";
 import { ProfilePreview } from "@/components/dashboard/profile-preview";
 import type { LinkData, SocialLinkData, ProductData, EmbedData, PageData, IntegrationData } from "@/components/public-page/public-profile";
 import { toast } from "@/components/ui/toast";
@@ -619,21 +621,66 @@ export default function AppearancePage() {
 
   const canUndo = historyIndex > 0;
 
-  const applyPreset = useCallback((preset: typeof quickStylePresets[number]) => {
+  const applyPreset = useCallback((preset: Template) => {
     setSettings((prev) => ({
       ...prev,
-      theme: preset.theme,
-      accentColor: preset.accentColor,
-      buttonStyle: preset.buttonStyle,
-      hoverEffect: preset.hoverEffect,
-      layoutMode: preset.layoutMode,
-      linkBorderWidth: preset.linkBorderWidth,
-      linkShadow: preset.linkShadow,
-      linkSpacing: preset.linkSpacing,
-      fontFamily: preset.fontFamily,
-      fontSize: preset.fontSize,
+      theme: preset.appearance.theme,
+      accentColor: preset.appearance.accentColor,
+      buttonStyle: preset.appearance.buttonStyle,
+      hoverEffect: preset.appearance.hoverEffect,
+      layoutMode: preset.appearance.layoutMode,
+      linkBorderWidth: preset.appearance.linkBorderWidth,
+      linkShadow: preset.appearance.linkShadow,
+      linkSpacing: preset.appearance.linkSpacing,
+      fontFamily: preset.appearance.fontFamily,
+      fontSize: preset.appearance.fontSize,
+      ...(preset.appearance.buttonTextColor ? { buttonTextColor: preset.appearance.buttonTextColor } : {}),
+      ...(preset.appearance.backgroundColor ? { backgroundColor: preset.appearance.backgroundColor } : {}),
+      ...(preset.appearance.avatarShape ? { avatarShape: preset.appearance.avatarShape } : {}),
+      ...(preset.appearance.showAvatar !== undefined ? { showAvatar: preset.appearance.showAvatar } : {}),
+      ...(preset.appearance.showBio !== undefined ? { showBio: preset.appearance.showBio } : {}),
+      ...(preset.appearance.buttonFontWeight ? { buttonFontWeight: preset.appearance.buttonFontWeight } : {}),
     }));
   }, []);
+
+  const [includeTemplateContent, setIncludeTemplateContent] = useState(true)
+  const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null)
+  const [templateCategory, setTemplateCategory] = useState("All")
+
+  const templateCategories = ["All", ...Array.from(new Set(templates.map((t) => t.category)))]
+
+  const applyTemplate = useCallback(async (template: Template) => {
+    applyPreset(template)
+    try {
+      setApplyingTemplate(template.id)
+      const res = await fetch("/api/templates/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId: template.id, includeContent: includeTemplateContent }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        let msg = `Applied "${template.name}" template`
+        if (data.seededLinks || data.seededSocial) {
+          msg += ` + added ${data.seededLinks + data.seededSocial} starter items`
+        }
+        toast.success(msg)
+      } else {
+        toast.error(data.error || "Failed to apply template")
+      }
+    } catch {
+      toast.error("Failed to apply template")
+    } finally {
+      setApplyingTemplate(null)
+    }
+  }, [applyPreset, includeTemplateContent])
+
+  const shuffleTemplate = useCallback(() => {
+    const available = templates.filter((t) => !(t.isPro && !isPro))
+    if (available.length === 0) return
+    const pick = available[Math.floor(Math.random() * available.length)]
+    applyTemplate(pick)
+  }, [applyTemplate, isPro])
 
   const resetToDefaults = useCallback(() => {
     setSettings(defaultSettings);
@@ -761,51 +808,118 @@ export default function AppearancePage() {
           {/* Quick Start Tab */}
           <TabsContent value="quickstart" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
             <SectionCard
-              title="Quick Start Templates"
-              description="Apply a complete style bundle in one click — pick a vibe and go"
+              title="Pre-made Templates"
+              description="Start in seconds — pick a template for your niche and we'll set the style (and optional starter links)"
               icon={<Zap className="w-5 h-5" />}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {quickStylePresets.map((preset) => {
-                  const isLocked = (preset as any).isPro && !isPro;
-                  const isActive = settings.theme === preset.theme && settings.buttonStyle === preset.buttonStyle;
-                  return (
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 px-4 py-3 mb-4">
+                <div className="flex items-start gap-2">
+                  <Layers className="w-4 h-4 mt-0.5 text-neutral-500" />
+                  <div>
+                    <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">Add starter links & socials</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Only fills empty pages — never overwrites your existing links</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={includeTemplateContent}
+                  onCheckedChange={setIncludeTemplateContent}
+                  aria-label="Include starter content"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {templateCategories.map((cat) => (
                     <button
-                      key={preset.id}
-                      onClick={() => !isLocked && applyPreset(preset)}
-                      disabled={isLocked}
-                      aria-pressed={isActive}
+                      key={cat}
+                      onClick={() => setTemplateCategory(cat)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                        templateCategory === cat
+                          ? "bg-brand-600 text-white border-brand-600"
+                          : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={shuffleTemplate}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  title="Apply a random template"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  Surprise me
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {templates.filter((t) => templateCategory === "All" || t.category === templateCategory).map((template) => {
+                  const isLocked = template.isPro && !isPro;
+                  const isActive = settings.theme === template.appearance.theme && settings.accentColor === template.appearance.accentColor;
+                  const applying = applyingTemplate === template.id;
+                  return (
+                    <div
+                      key={template.id}
                       className={cn(
                         "relative flex flex-col rounded-xl border-2 overflow-hidden transition-all text-left group",
                         isActive
                           ? "border-brand-500 shadow-lg"
                           : isLocked
-                          ? "border-neutral-200 dark:border-neutral-700 opacity-50 cursor-not-allowed"
+                          ? "border-neutral-200 dark:border-neutral-700"
                           : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-md"
                       )}
                     >
-                      <div className={cn("h-20 bg-gradient-to-br", preset.previewGradient, "flex items-end p-3")}>
-                        <div className="flex gap-1.5">
-                          <div className={cn("w-3 h-3 rounded-full", preset.previewAccent)} />
-                          <div className={cn("w-3 h-3 rounded-full opacity-60", preset.previewAccent)} />
-                          <div className={cn("w-3 h-3 rounded-full opacity-30", preset.previewAccent)} />
+                      <button
+                        onClick={() => !isLocked && applyTemplate(template)}
+                        disabled={isLocked || applying}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+                          isLocked && "cursor-not-allowed"
+                        )}
+                      >
+                        <div className={cn("h-24 bg-gradient-to-br flex items-end p-3", template.previewGradient)}>
+                          <div className="flex items-center gap-2 w-full">
+                            <span className="text-2xl drop-shadow-sm">{template.emoji}</span>
+                            <div className="flex gap-1.5 ml-auto">
+                              <div className={cn("w-3 h-3 rounded-full", template.previewAccent)} />
+                              <div className={cn("w-3 h-3 rounded-full opacity-60", template.previewAccent)} />
+                              <div className={cn("w-3 h-3 rounded-full opacity-30", template.previewAccent)} />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-3 bg-white dark:bg-neutral-900">
-                        <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{preset.name}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{preset.description}</p>
+                        <div className="p-3 bg-white dark:bg-neutral-900">
+                          <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                            {template.name}
+                            {isLocked && <Crown className="w-3.5 h-3.5 text-yellow-500" />}
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">{template.description}</p>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400 dark:text-neutral-500 mt-2">{template.category}</p>
+                        </div>
+                      </button>
+                      <div className="px-3 pb-3 pt-0 bg-white dark:bg-neutral-900">
+                        <button
+                          onClick={() => !isLocked && applyTemplate(template)}
+                          disabled={isLocked || applying}
+                          className={cn(
+                            "w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5",
+                            isLocked
+                              ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed"
+                              : "bg-brand-600 text-white hover:bg-brand-700"
+                          )}
+                        >
+                          {applying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                          {isLocked ? "Pro only" : applying ? "Applying..." : "Use template"}
+                        </button>
                       </div>
                       {isActive && (
                         <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center z-10">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
-                      {isLocked && (
-                        <div className="absolute top-2 right-2 z-10">
-                          <Crown className="w-4 h-4 text-yellow-500" />
-                        </div>
-                      )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
