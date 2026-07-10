@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,7 +21,6 @@ import {
   LayoutGrid,
   Image,
   Eye,
-  EyeOff,
   Box,
   Mail,
   Code,
@@ -30,16 +28,17 @@ import {
   Search,
   Heart,
   Palette,
-  FontSize,
-  Shadow,
   Layers,
   MousePointer,
-  Monitor,
   Smartphone,
-  Tablet,
   RotateCcw,
   Save,
   Loader2,
+  Undo2,
+  Share2,
+  CheckCheck,
+  Zap,
+  RefreshCw,
 } from "lucide-react";
 import { themes, proThemes, buttonStyles, avatarShapes, alignmentOptions } from "@/lib/themes";
 import {
@@ -51,6 +50,8 @@ import {
   layoutModes,
   hoverEffects,
   fontWeightOptions,
+  colorHarmonies,
+  quickStylePresets,
 } from "@/lib/customization";
 import { ProfilePreview } from "@/components/dashboard/profile-preview";
 import type { LinkData, SocialLinkData, ProductData, EmbedData, PageData, IntegrationData } from "@/components/public-page/public-profile";
@@ -79,6 +80,7 @@ const textPresetColors = [
 ];
 
 const tabs = [
+  { id: "quickstart", label: "Quick Start", icon: Zap },
   { id: "theme", label: "Theme", icon: Palette },
   { id: "buttons", label: "Buttons", icon: Square },
   { id: "typography", label: "Typography", icon: Type },
@@ -87,6 +89,43 @@ const tabs = [
   { id: "visibility", label: "Visibility", icon: Eye },
   { id: "advanced", label: "Advanced", icon: Code },
 ] as const;
+
+const defaultSettings = {
+  accentColor: "#c04a2b",
+  theme: "default",
+  showBranding: true,
+  buttonStyle: "rounded",
+  bioAlignment: "center",
+  buttonTextColor: "#ffffff",
+  backgroundColor: "",
+  avatarShape: "circle",
+  fontFamily: "modern",
+  fontSize: "md",
+  linkBorderWidth: "none",
+  linkShadow: "none",
+  linkSpacing: "normal",
+  layoutMode: "list",
+  hoverEffect: "lift",
+  showAvatar: true,
+  showBio: true,
+  headerImageUrl: "",
+  customCss: "",
+  isLocked: false,
+  pagePassword: "",
+  buttonBorderColor: "",
+  buttonFontWeight: "medium",
+  countdownTitle: "",
+  countdownDate: "",
+  enableEmailCapture: false,
+  emailCaptureTitle: "",
+  metaTitle: "",
+  metaDescription: "",
+  ogImageUrl: "",
+  tipEnabled: false,
+  tipVenmo: "",
+  tipPayPal: "",
+  tipCashApp: "",
+};
 
 function ProBadge() {
   return (
@@ -98,7 +137,7 @@ function ProBadge() {
 
 function ProLock() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-neutral-900/40 rounded-xl">
+    <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-neutral-900/40 rounded-xl z-10">
       <div className="text-center p-4">
         <Crown className="w-8 h-8 text-yellow-500 mx-auto mb-1" />
         <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">Upgrade to Pro</p>
@@ -240,50 +279,119 @@ function SectionCard({ title, description, icon, children, className, pro = fals
   );
 }
 
+function ButtonPreview({ style, color, textColor, borderColor, fontWeight, fontFamily }: {
+  style: string;
+  color: string;
+  textColor?: string;
+  borderColor?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+}) {
+  const roundedClass = buttonStyles.find(s => s.id === style)?.className || "rounded-xl";
+  const weightClass = fontWeightOptions.find(w => w.id === fontWeight)?.className || "font-medium";
+  const font = fontFamilies.find(f => f.id === fontFamily);
+
+  return (
+    <div className="space-y-2">
+      <div
+        className={cn(
+          "px-6 py-3 text-sm transition-all duration-200 cursor-default",
+          roundedClass,
+          weightClass,
+        )}
+        style={{
+          backgroundColor: color || "#c04a2b",
+          color: textColor || "#ffffff",
+          borderColor: borderColor || undefined,
+          borderWidth: borderColor ? "1px" : undefined,
+          fontFamily: font?.family,
+        }}
+      >
+        My Awesome Link
+      </div>
+      <div
+        className={cn(
+          "px-6 py-3 text-sm transition-all duration-200 cursor-default opacity-70",
+          roundedClass,
+          weightClass,
+        )}
+        style={{
+          backgroundColor: color || "#c04a2b",
+          color: textColor || "#ffffff",
+          borderColor: borderColor || undefined,
+          borderWidth: borderColor ? "1px" : undefined,
+          fontFamily: font?.family,
+        }}
+      >
+        Another Link
+      </div>
+    </div>
+  );
+}
+
+function ThemeCard({ theme: t, isSelected, isLocked, onClick, accentColor }: {
+  theme: typeof themes[number];
+  isSelected: boolean;
+  isLocked: boolean;
+  onClick: () => void;
+  accentColor: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={isLocked}
+      className={cn(
+        "relative h-24 rounded-xl bg-gradient-to-b border-2 transition-all overflow-hidden group",
+        t.gradient,
+        isSelected
+          ? "border-brand-500 scale-105 shadow-lg"
+          : isLocked
+          ? "border-neutral-200 opacity-50 cursor-not-allowed"
+          : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:scale-[1.02]"
+      )}
+    >
+      {isLocked && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-neutral-900/40 rounded-xl z-10">
+          <Lock className="w-5 h-5 text-neutral-400" />
+        </div>
+      )}
+      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/20 to-transparent">
+        <span className={cn("text-xs font-semibold", t.id === "dark" || t.id === "midnight" ? "text-white" : "text-neutral-900 dark:text-white")}>
+          {t.name}
+        </span>
+      </div>
+      {!isLocked && (
+        <div
+          className="absolute top-2 right-2 w-4 h-4 rounded-full border-2 border-white/50 opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ backgroundColor: accentColor }}
+        />
+      )}
+      {isSelected && (
+        <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center z-10">
+          <Check className="w-3 h-3 text-white" />
+        </div>
+      )}
+      {t.isPro && (
+        <div className="absolute top-2 right-2 z-10">
+          <Crown className="w-3 h-3 text-yellow-500" />
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function AppearancePage() {
   const { data: session, update } = useSession();
   const isPro = (session?.user as any)?.isPro;
   const userName = session?.user?.name || "";
-  const [activeTab, setActiveTab] = useState<string>("theme");
+  const [activeTab, setActiveTab] = useState<string>("quickstart");
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [copiedStyle, setCopiedStyle] = useState(false);
+  const [history, setHistory] = useState<typeof defaultSettings[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // Settings state
-  const [settings, setSettings] = useState({
-    accentColor: "#c04a2b",
-    theme: "default",
-    showBranding: true,
-    buttonStyle: "rounded",
-    bioAlignment: "center",
-    buttonTextColor: "#ffffff",
-    backgroundColor: "",
-    avatarShape: "circle",
-    fontFamily: "modern",
-    fontSize: "md",
-    linkBorderWidth: "none",
-    linkShadow: "none",
-    linkSpacing: "normal",
-    layoutMode: "list",
-    hoverEffect: "lift",
-    showAvatar: true,
-    showBio: true,
-    headerImageUrl: "",
-    customCss: "",
-    isLocked: false,
-    pagePassword: "",
-    buttonBorderColor: "",
-    buttonFontWeight: "medium",
-    countdownTitle: "",
-    countdownDate: "",
-    enableEmailCapture: false,
-    emailCaptureTitle: "",
-    metaTitle: "",
-    metaDescription: "",
-    ogImageUrl: "",
-    tipEnabled: false,
-    tipVenmo: "",
-    tipPayPal: "",
-    tipCashApp: "",
-  });
+  const [settings, setSettings] = useState(defaultSettings);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -322,8 +430,7 @@ export default function AppearancePage() {
 
         if (settingsRes.ok) {
           const data = await settingsRes.json();
-          setSettings((prev) => ({
-            ...prev,
+          const newSettings = {
             accentColor: data.accentColor || "#c04a2b",
             theme: data.theme || "default",
             showBranding: data.showBranding ?? true,
@@ -358,7 +465,10 @@ export default function AppearancePage() {
             tipVenmo: data.tipVenmo || "",
             tipPayPal: data.tipPayPal || "",
             tipCashApp: data.tipCashApp || "",
-          }));
+          };
+          setSettings(newSettings);
+          setHistory([newSettings]);
+          setHistoryIndex(0);
         }
 
         if (referralRes?.ok) {
@@ -366,7 +476,6 @@ export default function AppearancePage() {
           setBrandingUnlocked(data.brandingUnlocked);
         }
 
-        // Load preview data
         const preview: any = {};
         if (linksRes?.ok) preview.links = await linksRes.json();
         if (socialRes?.ok) preview.socialLinks = await socialRes.json();
@@ -469,61 +578,76 @@ export default function AppearancePage() {
     settings.customCss, settings.buttonBorderColor, settings.countdownDate,
   ]);
 
-  const handleSave = async () => {
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    savingRef.current = true;
-    setSaving(true);
-    setMessage("");
-    // Same body as above
-    const body: Record<string, any> = {
-      accentColor: settings.accentColor,
-      theme: settings.theme,
-      showBranding: settings.showBranding,
-      buttonStyle: settings.buttonStyle,
-      bioAlignment: settings.bioAlignment,
-      fontFamily: settings.fontFamily,
-      fontSize: settings.fontSize,
-      linkBorderWidth: settings.linkBorderWidth,
-      linkShadow: settings.linkShadow,
-      linkSpacing: settings.linkSpacing,
-      layoutMode: settings.layoutMode,
-      hoverEffect: settings.hoverEffect,
-      showAvatar: settings.showAvatar,
-      showBio: settings.showBio,
-      isLocked: settings.isLocked,
-      pagePassword: settings.pagePassword,
-      buttonFontWeight: settings.buttonFontWeight,
-      enableEmailCapture: settings.enableEmailCapture,
-      emailCaptureTitle: settings.emailCaptureTitle,
-      metaTitle: settings.metaTitle,
-      metaDescription: settings.metaDescription,
-      ogImageUrl: settings.ogImageUrl,
-      tipEnabled: settings.tipEnabled,
-      tipVenmo: settings.tipVenmo,
-      tipPayPal: settings.tipPayPal,
-      tipCashApp: settings.tipCashApp,
-      headerImageUrl: settings.headerImageUrl || null,
-    };
-    if (isPro) {
-      body.buttonTextColor = settings.buttonTextColor;
-      body.avatarShape = settings.avatarShape;
-      body.backgroundColor = settings.backgroundColor || null;
-      body.customCss = settings.customCss || null;
-      body.buttonBorderColor = settings.buttonBorderColor || null;
-      body.countdownDate = settings.countdownDate || null;
-    }
-    const res = await fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+  const updateSetting = useCallback(<K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
+    setSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      setHistory((h) => {
+        const newHistory = h.slice(0, historyIndex + 1);
+        newHistory.push(next);
+        if (newHistory.length > 50) newHistory.shift();
+        return newHistory;
+      });
+      setHistoryIndex((i) => Math.min(i + 1, 49));
+      return next;
     });
-    setSaving(false);
-    savingRef.current = false;
-    setMessage(res.ok ? "Saved" : "Save failed");
-    if (res.ok) update();
-  };
+  }, [historyIndex]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      setSettings(prev);
+      setHistoryIndex(historyIndex - 1);
+    }
+  }, [history, historyIndex]);
+
+  const canUndo = historyIndex > 0;
+
+  const applyPreset = useCallback((preset: typeof quickStylePresets[number]) => {
+    setSettings((prev) => ({
+      ...prev,
+      theme: preset.theme,
+      accentColor: preset.accentColor,
+      buttonStyle: preset.buttonStyle,
+      hoverEffect: preset.hoverEffect,
+      layoutMode: preset.layoutMode,
+      linkBorderWidth: preset.linkBorderWidth,
+      linkShadow: preset.linkShadow,
+      linkSpacing: preset.linkSpacing,
+      fontFamily: preset.fontFamily,
+      fontSize: preset.fontSize,
+    }));
+  }, []);
+
+  const resetToDefaults = useCallback(() => {
+    setSettings(defaultSettings);
+    setShowResetConfirm(false);
+    toast.success("Reset to defaults");
+  }, []);
+
+  const shareStyle = useCallback(async () => {
+    const params = new URLSearchParams({
+      t: settings.theme,
+      c: settings.accentColor,
+      b: settings.buttonStyle,
+      h: settings.hoverEffect,
+      l: settings.layoutMode,
+      f: settings.fontFamily,
+      s: settings.fontSize,
+    });
+    const url = `${window.location.origin}/apply-style?${params.toString()}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedStyle(true);
+      toast.success("Style link copied!");
+      setTimeout(() => setCopiedStyle(false), 2000);
+    } catch {
+      toast.error("Failed to copy");
+    }
+  }, [settings]);
 
   const canToggleBranding = isPro || brandingUnlocked;
+
+  const harmonies = colorHarmonies[settings.accentColor] || colorHarmonies["#c04a2b"];
 
   if (loading) {
     return (
@@ -551,43 +675,66 @@ export default function AppearancePage() {
     );
   }
 
-  const updateSetting = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const applyPreset = (preset: {
-    theme: string;
-    buttonStyle: string;
-    hoverEffect: string;
-    layoutMode: string;
-  }) => {
-    updateSetting("theme", preset.theme);
-    updateSetting("buttonStyle", preset.buttonStyle);
-    updateSetting("hoverEffect", preset.hoverEffect);
-    updateSetting("layoutMode", preset.layoutMode);
-  };
-
-  const themePresets = [
-    { id: "clean", name: "Clean", theme: "default", buttonStyle: "rounded", hoverEffect: "lift", layoutMode: "list", swatch: "bg-gradient-to-br from-neutral-50 to-white" },
-    { id: "bold", name: "Bold", theme: "dark", buttonStyle: "pill", hoverEffect: "glow", layoutMode: "list", swatch: "bg-gradient-to-br from-neutral-900 to-neutral-800" },
-    { id: "playful", name: "Playful", theme: "sunset", buttonStyle: "pill", hoverEffect: "scale", layoutMode: "grid", swatch: "bg-gradient-to-br from-orange-50 to-rose-50" },
-    { id: "modern", name: "Modern", theme: "mint", buttonStyle: "square", hoverEffect: "slide", layoutMode: "list", swatch: "bg-gradient-to-br from-emerald-50 to-teal-50" },
-    { id: "elegant", name: "Elegant", theme: "lavender", buttonStyle: "rounded", hoverEffect: "lift", layoutMode: "list", swatch: "bg-gradient-to-br from-violet-50 to-purple-50", isPro: true },
-    { id: "edgy", name: "Edgy", theme: "midnight", buttonStyle: "square", hoverEffect: "none", layoutMode: "grid", swatch: "bg-gradient-to-br from-indigo-950 to-slate-900", isPro: true },
-  ];
-
   return (
     <div className="lg:flex lg:gap-6 lg:items-start">
       {/* Settings Panel */}
       <div className="flex-1 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Appearance</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Customize how your page looks</p>
+        {/* Header with actions */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Appearance</h1>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-1">Customize how your page looks</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={undo}
+              disabled={!canUndo}
+              aria-label="Undo"
+            >
+              <Undo2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={shareStyle}
+              aria-label="Share style"
+            >
+              {copiedStyle ? <CheckCheck className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowResetConfirm(true)}
+              aria-label="Reset to defaults"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+
+        {/* Reset Confirmation */}
+        {showResetConfirm && (
+          <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Reset all appearance settings to defaults?</p>
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">This cannot be undone.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(false)}>Cancel</Button>
+                  <Button variant="destructive" size="sm" onClick={resetToDefaults}>Reset</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 lg:grid-cols-8 gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
@@ -599,6 +746,97 @@ export default function AppearancePage() {
               </TabsTrigger>
             ))}
           </TabsList>
+
+          {/* Quick Start Tab */}
+          <TabsContent value="quickstart" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
+            <SectionCard
+              title="Quick Start Templates"
+              description="Apply a complete style bundle in one click — pick a vibe and go"
+              icon={<Zap className="w-5 h-5" />}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {quickStylePresets.map((preset) => {
+                  const isLocked = (preset as any).isPro && !isPro;
+                  const isActive = settings.theme === preset.theme && settings.buttonStyle === preset.buttonStyle;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => !isLocked && applyPreset(preset)}
+                      disabled={isLocked}
+                      className={cn(
+                        "relative flex flex-col rounded-xl border-2 overflow-hidden transition-all text-left group",
+                        isActive
+                          ? "border-brand-500 shadow-lg"
+                          : isLocked
+                          ? "border-neutral-200 dark:border-neutral-700 opacity-50 cursor-not-allowed"
+                          : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-md"
+                      )}
+                    >
+                      <div className={cn("h-20 bg-gradient-to-br", preset.previewGradient, "flex items-end p-3")}>
+                        <div className="flex gap-1.5">
+                          <div className={cn("w-3 h-3 rounded-full", preset.previewAccent)} />
+                          <div className={cn("w-3 h-3 rounded-full opacity-60", preset.previewAccent)} />
+                          <div className={cn("w-3 h-3 rounded-full opacity-30", preset.previewAccent)} />
+                        </div>
+                      </div>
+                      <div className="p-3 bg-white dark:bg-neutral-900">
+                        <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{preset.name}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{preset.description}</p>
+                      </div>
+                      {isActive && (
+                        <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center z-10">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                      {isLocked && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <Crown className="w-4 h-4 text-yellow-500" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Live Button Preview"
+              description="See how your buttons will look with current settings"
+              icon={<MousePointer className="w-5 h-5" />}
+            >
+              <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-6 flex items-center justify-center">
+                <ButtonPreview
+                  style={settings.buttonStyle}
+                  color={settings.accentColor}
+                  textColor={settings.buttonTextColor}
+                  borderColor={settings.buttonBorderColor}
+                  fontWeight={settings.buttonFontWeight}
+                  fontFamily={settings.fontFamily}
+                />
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Color Suggestions"
+              description="Colors that complement your current accent"
+              icon={<Palette className="w-5 h-5" />}
+            >
+              <div className="flex flex-wrap gap-3">
+                {harmonies.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => updateSetting("accentColor", color)}
+                    className={cn(
+                      "w-10 h-10 rounded-full border-2 transition-all hover:scale-110",
+                      settings.accentColor === color ? "border-neutral-900 dark:border-white scale-110" : "border-neutral-200 dark:border-neutral-700"
+                    )}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Use ${color} as accent`}
+                  />
+                ))}
+              </div>
+            </SectionCard>
+          </TabsContent>
 
           {/* Theme Tab */}
           <TabsContent value="theme" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
@@ -613,35 +851,14 @@ export default function AppearancePage() {
                   const isLocked = isProTheme && !isPro;
                   const isSelected = settings.theme === t.id && !isLocked;
                   return (
-                    <button
+                    <ThemeCard
                       key={t.id}
+                      theme={t}
+                      isSelected={isSelected}
+                      isLocked={isLocked}
                       onClick={() => !isLocked && updateSetting("theme", t.id)}
-                      disabled={isLocked}
-                      className={cn(
-                        "relative h-20 rounded-lg bg-gradient-to-b border-2 transition-all",
-                        t.gradient,
-                        "border-neutral-200 dark:border-neutral-700",
-                        isSelected
-                          ? "border-brand-500 scale-105"
-                          : isLocked
-                          ? "border-neutral-200 opacity-50 cursor-not-allowed"
-                          : "hover:border-neutral-300 dark:hover:border-neutral-600"
-                      )}
-                    >
-                      {isLocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-neutral-900/40 rounded-lg">
-                          <Lock className="w-5 h-5 text-neutral-400" />
-                        </div>
-                      )}
-                      <span className={cn("text-xs font-medium", t.id === "dark" || t.id === "midnight" ? "text-white" : "text-neutral-900 dark:text-white")}>
-                        {t.name}
-                      </span>
-                      {isProTheme && (
-                        <div className="absolute top-1 right-1">
-                          <Crown className="w-3 h-3 text-yellow-500" />
-                        </div>
-                      )}
-                    </button>
+                      accentColor={settings.accentColor}
+                    />
                   );
                 })}
               </div>
@@ -664,40 +881,6 @@ export default function AppearancePage() {
                 presets={presetColors}
                 label="Accent Color"
               />
-            </SectionCard>
-
-            <SectionCard
-              title="Theme Presets"
-              description="Apply a complete style bundle in one click"
-              icon={<Sparkles className="w-5 h-5" />}
-            >
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {themePresets.map((preset) => (
-                  <button
-                    key={preset.id}
-                    onClick={() => applyPreset(preset)}
-                    disabled={preset.isPro && !isPro}
-                    className={cn(
-                      "relative flex flex-col items-center gap-2 py-4 px-3 text-sm font-medium border-2 rounded-xl transition-all",
-                      settings.theme === preset.theme &&
-                      settings.buttonStyle === preset.buttonStyle &&
-                      settings.hoverEffect === preset.hoverEffect &&
-                      settings.layoutMode === preset.layoutMode
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
-                        : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100",
-                      preset.isPro && !isPro && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    <div className={cn("w-full h-10 rounded-lg", preset.swatch)} />
-                    <span>{preset.name}</span>
-                    {preset.isPro && !isPro && (
-                      <div className="absolute top-1 right-1">
-                        <Crown className="w-3 h-3 text-yellow-500" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
             </SectionCard>
 
             {isPro && (
@@ -735,7 +918,10 @@ export default function AppearancePage() {
                         : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
                     )}
                   >
-                    <div className={cn("w-full h-8 bg-neutral-300 mx-auto mb-2", bs.className)} />
+                    <div
+                      className={cn("w-full h-8 mx-auto mb-2 transition-colors", bs.className)}
+                      style={{ backgroundColor: settings.accentColor || "#c04a2b" }}
+                    />
                     {bs.name}
                   </button>
                 ))}
@@ -801,11 +987,11 @@ export default function AppearancePage() {
                 description="Control how bold your link button text appears"
                 icon={<Type className="w-5 h-5" />}
               >
-                <OptionGrid
-                  options={fontWeightOptions}
-                  value={settings.buttonFontWeight}
-                  onChange={(v) => updateSetting("buttonFontWeight", v)}
-                />
+              <OptionGrid
+                options={fontWeightOptions as any}
+                value={settings.buttonFontWeight}
+                onChange={(v) => updateSetting("buttonFontWeight", v as any)}
+              />
               </SectionCard>
             )}
 
@@ -829,7 +1015,7 @@ export default function AppearancePage() {
                       !isPro && "opacity-60 cursor-not-allowed"
                     )}
                   >
-                    <div className={cn("w-12 h-12 bg-neutral-300 mx-auto mb-2", shape.className)} />
+                    <div className={cn("w-12 h-12 mx-auto mb-2", shape.className)} style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
                     {shape.name}
                     {!isPro && <ProBadge />}
                   </button>
@@ -846,11 +1032,14 @@ export default function AppearancePage() {
               icon={<Type className="w-5 h-5" />}
             >
               <OptionGrid
-                options={fontFamilies}
+                options={fontFamilies as any}
                 value={settings.fontFamily}
-                onChange={updateSetting}
-                renderOption={(opt, selected) => (
-                  <span style={{ fontFamily: opt.family }}>{opt.name}</span>
+                onChange={(v) => updateSetting("fontFamily", v as any)}
+                renderOption={(opt: any, selected) => (
+                  <div className="flex flex-col items-center gap-1 w-full">
+                    <span style={{ fontFamily: opt.family }} className="text-base">{opt.name}</span>
+                    <span style={{ fontFamily: opt.family }} className="text-xs opacity-60">{opt.preview}</span>
+                  </div>
                 )}
               />
             </SectionCard>
@@ -858,16 +1047,59 @@ export default function AppearancePage() {
             <SectionCard
               title="Font Size"
               description="Adjust the text size on your link buttons"
-              icon={<FontSize className="w-5 h-5" />}
+              icon={<Type className="w-5 h-5" />}
             >
               <OptionGrid
-                options={fontSizeOptions}
+                options={fontSizeOptions as any}
                 value={settings.fontSize}
-                onChange={updateSetting}
-                renderOption={(opt, selected) => (
-                  <span className={opt.className}>{opt.name}</span>
+                onChange={(v) => updateSetting("fontSize", v as any)}
+                renderOption={(opt: any, selected) => (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className={opt.className}>Aa</span>
+                    <span className="text-xs opacity-60">{opt.name}</span>
+                  </div>
                 )}
               />
+            </SectionCard>
+
+            <SectionCard
+              title="Live Typography Preview"
+              description="See how your text looks with the selected font and size"
+              icon={<Eye className="w-5 h-5" />}
+            >
+              <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-6">
+                <div
+                  className={cn(
+                    fontSizeOptions.find(s => s.id === settings.fontSize)?.className,
+                  )}
+                  style={{
+                    fontFamily: fontFamilies.find(f => f.id === settings.fontFamily)?.family,
+                  }}
+                >
+                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">Your Name</p>
+                  <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">Creator & Designer</p>
+                  <div className="mt-4 space-y-2">
+                    <div
+                      className={cn(
+                        "px-4 py-2 text-center",
+                        buttonStyles.find(s => s.id === settings.buttonStyle)?.className,
+                      )}
+                      style={{ backgroundColor: settings.accentColor || "#c04a2b", color: settings.buttonTextColor || "#fff" }}
+                    >
+                      Visit My Portfolio
+                    </div>
+                    <div
+                      className={cn(
+                        "px-4 py-2 text-center",
+                        buttonStyles.find(s => s.id === settings.buttonStyle)?.className,
+                      )}
+                      style={{ backgroundColor: settings.accentColor || "#c04a2b", color: settings.buttonTextColor || "#fff" }}
+                    >
+                      Follow on Twitter
+                    </div>
+                  </div>
+                </div>
+              </div>
             </SectionCard>
           </TabsContent>
 
@@ -879,9 +1111,9 @@ export default function AppearancePage() {
               icon={<Square className="w-5 h-5" />}
             >
               <OptionGrid
-                options={borderWidthOptions}
+                options={borderWidthOptions as any}
                 value={settings.linkBorderWidth}
-                onChange={updateSetting}
+                onChange={(v) => updateSetting("linkBorderWidth", v as any)}
               />
               {settings.linkBorderWidth !== "none" && (
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
@@ -893,12 +1125,12 @@ export default function AppearancePage() {
             <SectionCard
               title="Link Shadow"
               description="Add a shadow effect to your link buttons"
-              icon={<Shadow className="w-5 h-5" />}
+              icon={<Layers className="w-5 h-5" />}
             >
               <OptionGrid
-                options={shadowOptions}
+                options={shadowOptions as any}
                 value={settings.linkShadow}
-                onChange={updateSetting}
+                onChange={(v) => updateSetting("linkShadow", v as any)}
               />
             </SectionCard>
 
@@ -908,9 +1140,9 @@ export default function AppearancePage() {
               icon={<Layers className="w-5 h-5" />}
             >
               <OptionGrid
-                options={spacingOptions}
+                options={spacingOptions as any}
                 value={settings.linkSpacing}
-                onChange={updateSetting}
+                onChange={(v) => updateSetting("linkSpacing", v as any)}
               />
             </SectionCard>
 
@@ -920,10 +1152,10 @@ export default function AppearancePage() {
               icon={<LayoutGrid className="w-5 h-5" />}
             >
               <OptionGrid
-                options={layoutModes}
+                options={layoutModes as any}
                 value={settings.layoutMode}
-                onChange={updateSetting}
-                renderOption={(opt, selected) => (
+                onChange={(v) => updateSetting("layoutMode", v as any)}
+                renderOption={(opt: any, selected) => (
                   <>
                     {opt.id === "list" ? (
                       <div className="flex flex-col gap-1.5 w-12">
@@ -953,11 +1185,29 @@ export default function AppearancePage() {
               description="Animation when someone hovers over your link buttons"
               icon={<MousePointer className="w-5 h-5" />}
             >
-              <OptionGrid
-                options={hoverEffects}
-                value={settings.hoverEffect}
-                onChange={updateSetting}
-              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {hoverEffects.map((effect) => {
+                  const isSelected = settings.hoverEffect === effect.id;
+                  return (
+                    <button
+                      key={effect.id}
+                      onClick={() => updateSetting("hoverEffect", effect.id)}
+                      className={cn(
+                        "relative flex flex-col items-center gap-2 py-4 px-3 text-sm font-medium border-2 rounded-xl transition-all group",
+                        isSelected
+                          ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                          : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
+                      )}
+                    >
+                      <div className={cn("w-16 h-8 rounded-lg transition-all", effect.className)} style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
+                      <span>{effect.name}</span>
+                      {effect.description && (
+                        <span className="text-[10px] opacity-60">{effect.description}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </SectionCard>
 
             {isPro && (
@@ -1207,7 +1457,7 @@ export default function AppearancePage() {
           <p className={cn("text-sm", message === "Saved" ? "text-green-600 dark:text-green-400" : message === "Save failed" ? "text-red-600 dark:text-red-400" : "text-neutral-500 dark:text-neutral-400")}>
             {message || (saving ? "Saving..." : "All changes saved")}
           </p>
-          <Button onClick={handleSave} variant="outline" size="sm" disabled={saving}>
+          <Button onClick={() => {}} variant="outline" size="sm" disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Save
           </Button>
         </div>
@@ -1241,8 +1491,8 @@ export default function AppearancePage() {
                 showBranding={settings.showBranding}
                 buttonStyle={settings.buttonStyle}
                 bioAlignment={settings.bioAlignment}
-                buttonTextColor={settings.buttonTextColor || null}
-                backgroundColor={settings.backgroundColor || null}
+                buttonTextColor={settings.buttonTextColor}
+                backgroundColor={settings.backgroundColor}
                 avatarShape={settings.avatarShape}
                 fontFamily={settings.fontFamily}
                 fontSize={settings.fontSize}
@@ -1257,10 +1507,10 @@ export default function AppearancePage() {
                 customCss={settings.customCss}
                 isLocked={settings.isLocked}
                 pagePassword={settings.pagePassword}
-                buttonBorderColor={settings.buttonBorderColor || null}
+                buttonBorderColor={settings.buttonBorderColor}
                 buttonFontWeight={settings.buttonFontWeight}
                 countdownTitle={settings.countdownTitle}
-                countdownDate={settings.countdownDate || null}
+                countdownDate={settings.countdownDate}
                 enableEmailCapture={settings.enableEmailCapture}
                 emailCaptureTitle={settings.emailCaptureTitle}
                 metaTitle={settings.metaTitle}
@@ -1291,6 +1541,7 @@ export default function AppearancePage() {
               <button
                 onClick={() => setShowMobilePreview(false)}
                 className="absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                aria-label="Close preview"
               >
                 <RotateCcw className="w-5 h-5" />
               </button>
@@ -1307,8 +1558,8 @@ export default function AppearancePage() {
                 showBranding={settings.showBranding}
                 buttonStyle={settings.buttonStyle}
                 bioAlignment={settings.bioAlignment}
-                buttonTextColor={settings.buttonTextColor || null}
-                backgroundColor={settings.backgroundColor || null}
+                buttonTextColor={settings.buttonTextColor}
+                backgroundColor={settings.backgroundColor}
                 avatarShape={settings.avatarShape}
                 fontFamily={settings.fontFamily}
                 fontSize={settings.fontSize}
@@ -1323,10 +1574,10 @@ export default function AppearancePage() {
                 customCss={settings.customCss}
                 isLocked={settings.isLocked}
                 pagePassword={settings.pagePassword}
-                buttonBorderColor={settings.buttonBorderColor || null}
+                buttonBorderColor={settings.buttonBorderColor}
                 buttonFontWeight={settings.buttonFontWeight}
                 countdownTitle={settings.countdownTitle}
-                countdownDate={settings.countdownDate || null}
+                countdownDate={settings.countdownDate}
                 enableEmailCapture={settings.enableEmailCapture}
                 emailCaptureTitle={settings.emailCaptureTitle}
                 metaTitle={settings.metaTitle}
