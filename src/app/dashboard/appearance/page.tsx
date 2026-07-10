@@ -58,6 +58,14 @@ import type { LinkData, SocialLinkData, ProductData, EmbedData, PageData, Integr
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
+function isLightColor(hex: string): boolean {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150;
+}
+
 const presetColors = [
   "#c04a2b", "#d46845", "#e8926e", "#ef4444",
   "#f97316", "#eab308", "#22c55e", "#14b8a6",
@@ -129,7 +137,7 @@ const defaultSettings = {
 
 function ProBadge() {
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 px-2 py-0.5 rounded-full">
       <Crown className="w-3 h-3" /> Pro
     </span>
   );
@@ -161,8 +169,8 @@ function ColorPicker({ value, onChange, presets, label, showClear = true, classN
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg border-2 border-neutral-200 dark:border-neutral-700 flex items-center justify-center relative" style={{ backgroundColor: value || "#ffffff" }}>
           {value && (
-            <span className="text-xs font-bold" style={{ color: value === "#ffffff" ? "#000" : "#fff" }}>
-              {value === "#ffffff" ? "FFF" : ""}
+            <span className="text-[10px] font-bold opacity-80" style={{ color: isLightColor(value) ? "#000" : "#fff" }}>
+              {value.replace("#", "").toUpperCase()}
             </span>
           )}
         </div>
@@ -185,10 +193,12 @@ function ColorPicker({ value, onChange, presets, label, showClear = true, classN
             onClick={() => onChange(color)}
             className={cn(
               "w-8 h-8 rounded-full border-2 transition-all",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
               value === color ? "border-neutral-900 dark:border-white scale-110" : "border-neutral-200 dark:border-neutral-700"
             )}
             style={{ backgroundColor: color }}
-            aria-label={color}
+            title={color}
+            aria-label={`Color ${color}`}
             aria-pressed={value === color}
           />
         ))}
@@ -381,7 +391,7 @@ function ThemeCard({ theme: t, isSelected, isLocked, onClick, accentColor }: {
 }
 
 export default function AppearancePage() {
-  const { data: session, update } = useSession();
+  const { data: session } = useSession();
   const isPro = (session?.user as any)?.isPro;
   const userName = session?.user?.name || "";
   const [activeTab, setActiveTab] = useState<string>("quickstart");
@@ -510,7 +520,7 @@ export default function AppearancePage() {
   useEffect(() => {
     if (!loaded.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    setMessage("");
+    setMessage("Unsaved changes");
     autoSaveTimer.current = setTimeout(async () => {
       if (savingRef.current) return;
       savingRef.current = true;
@@ -561,12 +571,19 @@ export default function AppearancePage() {
         setSaving(false);
         savingRef.current = false;
         setMessage(res.ok ? "Saved" : "Save failed");
+        if (!res.ok) {
+          setTimeout(() => setMessage(""), 5000);
+        }
       } catch {
         setSaving(false);
         savingRef.current = false;
         setMessage("Save failed");
+        setTimeout(() => setMessage(""), 5000);
       }
     }, 800);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
   }, [
     settings.accentColor, settings.theme, settings.showBranding, settings.buttonStyle, settings.bioAlignment,
     settings.fontFamily, settings.fontSize, settings.linkBorderWidth, settings.linkShadow, settings.linkSpacing,
@@ -658,18 +675,12 @@ export default function AppearancePage() {
             <p className="text-neutral-500 dark:text-neutral-400 mt-1">Customize how your page looks</p>
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2" />
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-6">
+          <div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3 animate-pulse" />
+          <div className="h-12 bg-neutral-200 dark:bg-neutral-700 rounded-xl animate-pulse" />
+          <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-xl animate-pulse" />
+          <div className="h-32 bg-neutral-200 dark:bg-neutral-700 rounded-xl animate-pulse" />
+          <div className="h-32 bg-neutral-200 dark:bg-neutral-700 rounded-xl animate-pulse" />
         </div>
       </div>
     );
@@ -678,7 +689,7 @@ export default function AppearancePage() {
   return (
     <div className="lg:flex lg:gap-6 lg:items-start">
       {/* Settings Panel */}
-      <div className="flex-1 space-y-6">
+      <div className="flex-1 min-w-0 space-y-6">
         {/* Header with actions */}
         <div className="flex items-start justify-between">
           <div>
@@ -734,7 +745,7 @@ export default function AppearancePage() {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
+          <TabsList className="flex md:grid md:grid-cols-8 gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
@@ -763,6 +774,7 @@ export default function AppearancePage() {
                       key={preset.id}
                       onClick={() => !isLocked && applyPreset(preset)}
                       disabled={isLocked}
+                      aria-pressed={isActive}
                       className={cn(
                         "relative flex flex-col rounded-xl border-2 overflow-hidden transition-all text-left group",
                         isActive
@@ -865,7 +877,7 @@ export default function AppearancePage() {
               {!isPro && (
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
                   <Crown className="w-3 h-3 inline mr-1 text-yellow-500" />
-                  5 additional themes available on the Pro plan.
+                  {proThemes.length} additional themes available on the Pro plan.
                 </p>
               )}
             </SectionCard>
@@ -911,6 +923,7 @@ export default function AppearancePage() {
                   <button
                     key={bs.id}
                     onClick={() => updateSetting("buttonStyle", bs.id)}
+                    aria-pressed={settings.buttonStyle === bs.id}
                     className={cn(
                       "flex-1 min-w-[120px] py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all",
                       settings.buttonStyle === bs.id
@@ -938,6 +951,7 @@ export default function AppearancePage() {
                   <button
                     key={opt.id}
                     onClick={() => updateSetting("bioAlignment", opt.id)}
+                    aria-pressed={settings.bioAlignment === opt.id}
                     className={cn(
                       "flex-1 min-w-[100px] py-3 px-4 text-sm font-medium border-2 rounded-xl transition-all",
                       settings.bioAlignment === opt.id
@@ -1007,6 +1021,7 @@ export default function AppearancePage() {
                     key={shape.id}
                     onClick={() => !isPro || updateSetting("avatarShape", shape.id)}
                     disabled={!isPro}
+                    aria-pressed={settings.avatarShape === shape.id && isPro}
                     className={cn(
                       "flex-1 min-w-[100px] py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all",
                       settings.avatarShape === shape.id && isPro
@@ -1193,13 +1208,14 @@ export default function AppearancePage() {
                       key={effect.id}
                       onClick={() => updateSetting("hoverEffect", effect.id)}
                       className={cn(
-                        "relative flex flex-col items-center gap-2 py-4 px-3 text-sm font-medium border-2 rounded-xl transition-all group",
+                        "relative flex flex-col items-center gap-2 py-4 px-3 text-sm font-medium border-2 rounded-xl transition-all group cursor-pointer",
                         isSelected
                           ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
                           : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
                       )}
+                      aria-pressed={isSelected}
                     >
-                      <div className={cn("w-16 h-8 rounded-lg transition-all", effect.className)} style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
+                      <div className={cn("w-16 h-8 rounded-lg transition-all duration-200", effect.id === "none" ? "" : `group-hover:${effect.className?.replace("hover:", "") || ""}`)} style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
                       <span>{effect.name}</span>
                       {effect.description && (
                         <span className="text-[10px] opacity-60">{effect.description}</span>
@@ -1218,11 +1234,13 @@ export default function AppearancePage() {
               >
                 <div className="space-y-4">
                   <Input
+                    label="Countdown Title"
                     value={settings.countdownTitle}
                     onChange={(e) => updateSetting("countdownTitle", e.target.value)}
                     placeholder="e.g. Launching in"
                   />
                   <Input
+                    label="Countdown Date"
                     type="datetime-local"
                     value={settings.countdownDate}
                     onChange={(e) => updateSetting("countdownDate", e.target.value)}
@@ -1237,13 +1255,18 @@ export default function AppearancePage() {
                 description="Inject custom CSS to style your page (advanced)"
                 icon={<Code className="w-5 h-5" />}
               >
-                <Textarea
-                  value={settings.customCss}
-                  onChange={(e) => updateSetting("customCss", e.target.value)}
-                  placeholder="/* Add your custom CSS here */
+                <div className="space-y-3">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                    Caution: Invalid CSS may break your page layout. Changes are applied in real-time.
+                  </p>
+                  <Textarea
+                    value={settings.customCss}
+                    onChange={(e) => updateSetting("customCss", e.target.value)}
+                    placeholder="/* Add your custom CSS here */
 .my-link { background: red !important; }"
-                  className="font-mono text-sm min-h-[120px]"
-                />
+                    className="font-mono text-sm min-h-[120px]"
+                  />
+                </div>
               </SectionCard>
             )}
           </TabsContent>
@@ -1382,6 +1405,9 @@ export default function AppearancePage() {
                     {settings.ogImageUrl && (
                       <img src={settings.ogImageUrl} alt="" className="w-full h-24 object-cover rounded-lg border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
                     )}
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Recommended: 1200x630px for social media cards.
+                    </p>
                   </div>
                 </div>
               </SectionCard>
@@ -1453,11 +1479,11 @@ export default function AppearancePage() {
         </Tabs>
 
         {/* Save Status */}
-        <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
-          <p className={cn("text-sm", message === "Saved" ? "text-green-600 dark:text-green-400" : message === "Save failed" ? "text-red-600 dark:text-red-400" : "text-neutral-500 dark:text-neutral-400")}>
+        <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800 sticky bottom-0 bg-background z-10 py-3">
+          <p className={cn("text-sm transition-colors duration-200", message === "Saved" ? "text-green-600 dark:text-green-400" : message === "Save failed" ? "text-red-600 dark:text-red-400" : "text-neutral-500 dark:text-neutral-400")}>
             {message || (saving ? "Saving..." : "All changes saved")}
           </p>
-          <Button onClick={() => {}} variant="outline" size="sm" disabled={saving}>
+          <Button onClick={() => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); }} variant="outline" size="sm" disabled={saving || !message || message === "Saved"}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Save
           </Button>
         </div>
@@ -1472,7 +1498,7 @@ export default function AppearancePage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowMobilePreview(true)}
-                  className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800"
+                  className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   aria-label="Mobile preview"
                 >
                   <Smartphone className="w-5 h-5" />
@@ -1534,13 +1560,20 @@ export default function AppearancePage() {
 
       {/* Mobile Preview Sheet */}
       {showMobilePreview && previewData && (
-        <div className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setShowMobilePreview(false)}>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+          onClick={() => setShowMobilePreview(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowMobilePreview(false); }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile preview"
+        >
           <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-neutral-950 rounded-t-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-neutral-950 z-10 pt-3 pb-2 flex items-center justify-center">
               <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full" />
               <button
                 onClick={() => setShowMobilePreview(false)}
-                className="absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                 aria-label="Close preview"
               >
                 <RotateCcw className="w-5 h-5" />
@@ -1598,6 +1631,15 @@ export default function AppearancePage() {
           </div>
         </div>
       )}
+
+      {/* Floating Mobile Preview Button */}
+      <button
+        onClick={() => setShowMobilePreview(true)}
+        className="lg:hidden fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 flex items-center justify-center hover:bg-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        aria-label="Open mobile preview"
+      >
+        <Smartphone className="w-5 h-5" />
+      </button>
     </div>
   );
 }
