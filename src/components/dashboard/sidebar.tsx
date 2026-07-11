@@ -28,6 +28,7 @@ import {
   EyeOff,
   Copy,
   Menu,
+  QrCode,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/links", label: "Links", icon: LinkIcon },
   { href: "/dashboard/pages", label: "Pages", icon: FileText },
+  { href: "/dashboard/qr-cards", label: "QR Cards", icon: QrCode },
   { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
