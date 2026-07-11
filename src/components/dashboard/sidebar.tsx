@@ -15,7 +15,6 @@ import {
   Ellipsis,
   ChevronRight,
   User,
-  BarChart3,
   FileText,
   Zap,
   Mail,
@@ -38,7 +37,6 @@ const navItems = [
   { href: "/dashboard/links", label: "Links", icon: LinkIcon },
   { href: "/dashboard/pages", label: "Pages", icon: FileText },
   { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 

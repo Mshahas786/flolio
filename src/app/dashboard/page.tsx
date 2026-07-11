@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
 import { SkeletonCard, SkeletonText } from "@/components/ui/skeleton"
-import { Link as LinkIcon, MousePointerClick, Crown, QrCode, ExternalLink, Sparkles, ArrowRight } from "lucide-react"
+import { Link as LinkIcon, MousePointerClick, Crown, QrCode, ExternalLink, Sparkles, ArrowRight, BarChart3 } from "lucide-react"
 import Link from "next/link"
 
 interface LinkData {
@@ -104,6 +104,11 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex items-center gap-2 pt-2">
+        <BarChart3 className="w-5 h-5 text-primary" />
+        <h2 className="text-xl font-semibold">Analytics</h2>
       </div>
 
       <Card>
