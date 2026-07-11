@@ -116,7 +116,7 @@ function buildUrl(link: LinkData): string {
   return `${link.url}${separator}${qs}`
 }
 
-function CountdownTimer({ targetDate }: { targetDate: string }) {
+function CountdownTimer({ targetDate, textClass }: { targetDate: string; textClass?: string }) {
   const [timeLeft, setTimeLeft] = useState("")
 
   useEffect(() => {
@@ -134,7 +134,7 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
     return () => clearInterval(int)
   }, [targetDate])
 
-  return <div className="text-2xl font-bold font-mono tracking-wider my-4">{timeLeft}</div>
+  return <div className={`text-2xl font-bold font-mono tracking-wider my-4 ${textClass || ""}`}>{timeLeft}</div>
 }
 
 function GatedLink({ link, accentColor, buttonTextColor, borderColorValue, className, children }: {
@@ -328,7 +328,7 @@ export function PublicProfile({
   }
 
   return (
-    <div className={`min-h-screen ${bgGradient} px-4 ${showBranding && !preview ? "pb-24" : "pb-16"} animate-in fade-in-0 duration-500`} style={bgStyle}>
+    <div className={`min-h-screen ${bgGradient} px-4 ${showBranding && !preview ? "pb-24" : "pb-16"} ${activeTheme.textClass} animate-in fade-in-0 duration-500`} style={bgStyle}>
       {!preview && <AnalyticsScripts integrations={integrations} />}
       {customCss && <style>{customCss}</style>}
       <div className={`max-w-md mx-auto pt-12 ${bioAlignment === "left" ? "text-left" : "text-center"}`}>
@@ -347,7 +347,7 @@ export function PublicProfile({
         {countdownDate && countdownTitle && (
           <div className="mb-6">
             <p className="text-sm text-muted-foreground mb-1">{countdownTitle}</p>
-            <CountdownTimer targetDate={countdownDate} />
+            <CountdownTimer targetDate={countdownDate} textClass={activeTheme.textClass} />
           </div>
         )}
 

@@ -18,6 +18,7 @@ import {
   Users,
   Zap,
   Check,
+  ChevronLeft,
   ChevronRight,
   Linkedin,
   Twitter,
@@ -479,6 +480,19 @@ export default function HomePage() {
                 </div>
               </div>
 
+              <button onClick={() => setTestimonialIndex(i => Math.max(0, i - 1))}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white dark:bg-neutral-900 shadow-lg border border-neutral-200 dark:border-neutral-700 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all z-10"
+                aria-label="Previous testimonial"
+              >
+                <ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+              </button>
+              <button onClick={() => setTestimonialIndex(i => Math.min(testimonials.length - 1, i + 1))}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white dark:bg-neutral-900 shadow-lg border border-neutral-200 dark:border-neutral-700 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all z-10"
+                aria-label="Next testimonial"
+              >
+                <ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+              </button>
+
               <div className="flex justify-center gap-2 mt-8">
                 {testimonials.map((_, i) => (
                   <button
@@ -531,21 +545,29 @@ export default function HomePage() {
               </p>
             </div>
             <div className="space-y-3">
-              {faqs.map((faq, i) => (
-                <details
-                  key={faq.q}
-                  className="group bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden hover:border-brand-200/50 dark:hover:border-brand-800/50 transition-colors duration-300"
-                  style={{ animation: `fadeUp 0.4s ease-out ${i * 80}ms both` }}
-                >
-                  <summary className="flex items-center justify-between px-6 py-4 cursor-pointer text-sm font-medium text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors list-none">
-                    <span>{faq.q}</span>
-                    <ChevronRight className="w-4 h-4 text-neutral-400 group-open:rotate-90 transition-transform shrink-0 ml-4" />
-                  </summary>
-                  <div className="px-6 pb-4 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed border-t border-neutral-200 dark:border-neutral-800 pt-3 animate-in slide-in-from-top-2 duration-200">
-                    {faq.a}
+              {faqs.map((faq, i) => {
+                const isOpen = activeFaq === faq.q
+                return (
+                  <div key={faq.q}
+                    className="bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden hover:border-brand-200/50 dark:hover:border-brand-800/50 transition-colors duration-300"
+                    style={{ animation: `fadeUp 0.4s ease-out ${i * 80}ms both` }}
+                  >
+                    <button onClick={() => setActiveFaq(isOpen ? null : faq.q)}
+                      className="flex items-center justify-between w-full px-6 py-4 cursor-pointer text-sm font-medium text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors text-left"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronRight className={`w-4 h-4 text-neutral-400 transition-transform duration-300 shrink-0 ml-4 ${isOpen ? "rotate-90" : ""}`} />
+                    </button>
+                    <div className="transition-all duration-300 ease-out"
+                      style={{ maxHeight: isOpen ? "200px" : "0", opacity: isOpen ? 1 : 0 }}
+                    >
+                      <div className="px-6 pb-4 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed border-t border-neutral-200 dark:border-neutral-800 pt-3">
+                        {faq.a}
+                      </div>
+                    </div>
                   </div>
-                </details>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>
