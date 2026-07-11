@@ -39,6 +39,11 @@ const config = {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+          50: "#fef2f2",
+          100: "#fee2e2",
+          500: "#ef4444",
+          600: "#dc2626",
+          700: "#b91c1c",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -51,6 +56,32 @@ const config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        brand: {
+          50: "#fff5f2",
+          100: "#ffe8e0",
+          200: "#ffd0c1",
+          300: "#ffab90",
+          400: "#ff7a53",
+          500: "#ff5329",
+          600: "#e83e1c",
+          700: "#c42e16",
+          800: "#9e2714",
+          900: "#7f2313",
+          950: "#430e06",
+        },
+        success: {
+          50: "#f0fdf4",
+          100: "#dcfce7",
+          500: "#22c55e",
+          600: "#16a34a",
+          700: "#15803d",
+        },
+        warning: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          500: "#f59e0b",
+          600: "#d97706",
         },
       },
       borderRadius: {
