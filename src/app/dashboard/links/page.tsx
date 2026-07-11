@@ -584,53 +584,40 @@ function CollectionsTab({ isPro, links }: CollectionsTabProps) {
         </div>
       )}
 
-      {selectedCollection && (
-        <Card className="fixed inset-0 z-50 bg-background m-4 md:m-20 rounded-xl shadow-2xl max-h-[80vh] flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between border-b p-4">
-            <CardTitle className="text-lg">{selectedCollection.name}</CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => setSelectedCollection(null)}>
-              <X className="w-5 h-5" />
-            </Button>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              {selectedCollection.links?.map((cl: any) => (
-                <div key={cl.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50">
-                  <div className="w-8 h-8 rounded-lg border border-input bg-background flex items-center justify-center text-sm shrink-0">
-                    {cl.link.icon || <Link2 className="w-3.5 h-3.5 text-muted-foreground" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{cl.link.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{cl.link.url}</p>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await fetch(`/api/collections/${selectedCollection.id}/links`, {
-                        method: "DELETE",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ linkId: cl.linkId }),
-                      })
-                      selectCollection(selectedCollection)
-                    }}>
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-              {(!selectedCollection.links || selectedCollection.links.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Link2 className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                  <p>No links in this collection yet</p>
-                  <Button variant="outline" size="sm" className="mt-2"
-                    onClick={() => setSelectedCollection(null)}>
-                    Back to Collections
-                  </Button>
-                </div>
-              )}
+      <Modal open={!!selectedCollection} onClose={() => setSelectedCollection(null)} title={selectedCollection?.name || ""} size="full">
+        <div className="space-y-2">
+          {selectedCollection?.links?.map((cl: any) => (
+            <div key={cl.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50">
+              <div className="w-8 h-8 rounded-lg border border-input bg-background flex items-center justify-center text-sm shrink-0">
+                {cl.link.icon || <Link2 className="w-3.5 h-3.5 text-muted-foreground" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{cl.link.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{cl.link.url}</p>
+              </div>
+              <Button variant="ghost" size="icon" className="h-7 w-7"
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  if (!selectedCollection) return
+                  await fetch(`/api/collections/${selectedCollection.id}/links`, {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ linkId: cl.linkId }),
+                  })
+                  selectCollection(selectedCollection)
+                }}>
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ))}
+          {(!selectedCollection?.links || selectedCollection.links.length === 0) && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Link2 className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p>No links in this collection yet</p>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       <Modal open={formOpen} onClose={() => { setFormOpen(false); setEditing(null) }} title={editing ? "Edit Collection" : "Create Collection"}>
         <div className="space-y-4">
@@ -843,134 +830,126 @@ function SmartLinksTab({ isPro, links }: SmartLinksTabProps) {
         </div>
       )}
 
-      {selectedSmartLink && (
-        <Card className="fixed inset-0 z-50 bg-background m-4 md:m-20 rounded-xl shadow-2xl max-h-[80vh] flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between border-b p-4">
-            <CardTitle className="text-lg">{selectedSmartLink.name}</CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => setSelectedSmartLink(null)}>
-              <X className="w-5 h-5" />
+      <Modal open={!!selectedSmartLink} onClose={() => setSelectedSmartLink(null)} title={selectedSmartLink?.name || ""} size="full">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Share URL:</span>
+            <input
+              readOnly
+              value={selectedSmartLink ? `${siteUrl}/s/${selectedSmartLink.slug}` : ""}
+              className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono"
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+            />
+            <Button variant="outline" size="sm" onClick={() => selectedSmartLink && navigator.clipboard.writeText(`${siteUrl}/s/${selectedSmartLink.slug}`)}>
+              <Copy className="w-4 h-4 mr-1" /> Copy
             </Button>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Share URL:</span>
-                <input
-                  readOnly
-                  value={`${siteUrl}/s/${selectedSmartLink.slug}`}
-                  className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono"
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(`${siteUrl}/s/${selectedSmartLink.slug}`)}>
-                  <Copy className="w-4 h-4 mr-1" /> Copy
-                </Button>
-              </div>
+          </div>
 
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium">Destinations</h4>
-                  <Button size="sm" variant="outline" onClick={() => setShowAddItem(true)}>
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Add
-                  </Button>
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium">Destinations</h4>
+              <Button size="sm" variant="outline" onClick={() => setShowAddItem(true)}>
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add
+              </Button>
+            </div>
+
+            {showAddItem && selectedSmartLink && (
+              <div className="space-y-3 p-3 bg-muted/50 rounded-lg mb-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Link</label>
+                    <select value={itemLinkId} onChange={(e) => setItemLinkId(e.target.value)} className="w-full text-xs border rounded px-2 py-1.5 bg-background">
+                      <option value="">Select a link</option>
+                      {links.map((l) => (
+                        <option key={l.id} value={l.id}>{l.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Weight</label>
+                    <input type="number" min="1" max="100" value={itemWeight} onChange={(e) => setItemWeight(parseInt(e.target.value))} className="w-full text-xs border rounded px-2 py-1.5 bg-background" />
+                  </div>
                 </div>
-
-                {showAddItem && (
-                  <div className="space-y-3 p-3 bg-muted/50 rounded-lg mb-4">
-                    <div className="grid grid-cols-2 gap-3">
+                {["geo", "device", "ab_test"].includes(selectedSmartLink.type) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedSmartLink.type === "geo" && (
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Link</label>
-                        <select value={itemLinkId} onChange={(e) => setItemLinkId(e.target.value)} className="w-full text-xs border rounded px-2 py-1.5 bg-background">
-                          <option value="">Select a link</option>
-                          {links.map((l) => (
-                            <option key={l.id} value={l.id}>{l.title}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Weight</label>
-                        <input type="number" min="1" max="100" value={itemWeight} onChange={(e) => setItemWeight(parseInt(e.target.value))} className="w-full text-xs border rounded px-2 py-1.5 bg-background" />
-                      </div>
-                    </div>
-                    {["geo", "device", "ab_test"].includes(selectedSmartLink.type) && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedSmartLink.type === "geo" && (
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground">Country Code</label>
-                            <input type="text" value={itemCountry} onChange={(e) => setItemCountry(e.target.value.toUpperCase())} placeholder="US, GB, CA..." className="w-full text-xs border rounded px-2 py-1.5 bg-background" maxLength={2} />
-                          </div>
-                        )}
-                        {selectedSmartLink.type === "device" && (
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground">Device</label>
-                            <select value={itemDevice} onChange={(e) => setItemDevice(e.target.value)} className="w-full text-xs border rounded px-2 py-1.5 bg-background">
-                              <option value="">All devices</option>
-                              <option value="mobile">Mobile</option>
-                              <option value="desktop">Desktop</option>
-                              <option value="tablet">Tablet</option>
-                            </select>
-                          </div>
-                        )}
-                        {selectedSmartLink.type === "ab_test" && (
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground">Variant</label>
-                            <select value={itemVariant} onChange={(e) => setItemVariant(e.target.value)} className="w-full text-xs border rounded px-2 py-1.5 bg-background">
-                              <option value="A">Variant A</option>
-                              <option value="B">Variant B</option>
-                            </select>
-                          </div>
-                        )}
+                        <label className="text-xs font-medium text-muted-foreground">Country Code</label>
+                        <input type="text" value={itemCountry} onChange={(e) => setItemCountry(e.target.value.toUpperCase())} placeholder="US, GB, CA..." className="w-full text-xs border rounded px-2 py-1.5 bg-background" maxLength={2} />
                       </div>
                     )}
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={addItem}>Add Destination</Button>
-                      <Button size="sm" variant="outline" onClick={() => setShowAddItem(false)}>Cancel</Button>
-                    </div>
+                    {selectedSmartLink.type === "device" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">Device</label>
+                        <select value={itemDevice} onChange={(e) => setItemDevice(e.target.value)} className="w-full text-xs border rounded px-2 py-1.5 bg-background">
+                          <option value="">All devices</option>
+                          <option value="mobile">Mobile</option>
+                          <option value="desktop">Desktop</option>
+                          <option value="tablet">Tablet</option>
+                        </select>
+                      </div>
+                    )}
+                    {selectedSmartLink.type === "ab_test" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">Variant</label>
+                        <select value={itemVariant} onChange={(e) => setItemVariant(e.target.value)} className="w-full text-xs border rounded px-2 py-1.5 bg-background">
+                          <option value="A">Variant A</option>
+                          <option value="B">Variant B</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 )}
-
-                {selectedSmartLink.items?.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50">
-                    <div className="w-8 h-8 rounded-lg border border-input bg-background flex items-center justify-center text-sm shrink-0">
-                      {item.link?.icon || <Link2 className="w-3.5 h-3.5 text-muted-foreground" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.link?.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{item.link?.url}</p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>Weight: {item.weight}%</span>
-                        {item.country && <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded">🌍 {item.country}</span>}
-                        {item.device && <span className="bg-blue/10 text-blue px-1.5 py-0.5 rounded">📱 {item.device}</span>}
-                        {item.variant && <span className="bg-purple/10 text-purple px-1.5 py-0.5 rounded">A/B: {item.variant}</span>}
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={(e) => { e.stopPropagation(); removeItem(item.id) }}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={addItem}>Add Destination</Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowAddItem(false)}>Cancel</Button>
+                </div>
               </div>
+            )}
 
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Analytics</h4>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold">{selectedSmartLink.clicks}</p>
-                    <p className="text-xs text-muted-foreground">Total Clicks</p>
+            {selectedSmartLink?.items?.map((item: any) => (
+              <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50">
+                <div className="w-8 h-8 rounded-lg border border-input bg-background flex items-center justify-center text-sm shrink-0">
+                  {item.link?.icon || <Link2 className="w-3.5 h-3.5 text-muted-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{item.link?.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.link?.url}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <span>Weight: {item.weight}%</span>
+                    {item.country && <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded">🌍 {item.country}</span>}
+                    {item.device && <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">📱 {item.device}</span>}
+                    {item.variant && <span className="bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded">A/B: {item.variant}</span>}
                   </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold">{selectedSmartLink.conversions}</p>
-                    <p className="text-xs text-muted-foreground">Conversions</p>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold">{selectedSmartLink.clicks > 0 ? ((selectedSmartLink.conversions / selectedSmartLink.clicks) * 100).toFixed(1) : 0}%</p>
-                    <p className="text-xs text-muted-foreground">Conversion Rate</p>
-                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={(e) => { e.stopPropagation(); removeItem(item.id) }}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {selectedSmartLink && (
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Analytics</h4>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-2xl font-bold">{selectedSmartLink.clicks}</p>
+                  <p className="text-xs text-muted-foreground">Total Clicks</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-2xl font-bold">{selectedSmartLink.conversions}</p>
+                  <p className="text-xs text-muted-foreground">Conversions</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-2xl font-bold">{selectedSmartLink.clicks > 0 ? ((selectedSmartLink.conversions / selectedSmartLink.clicks) * 100).toFixed(1) : 0}%</p>
+                  <p className="text-xs text-muted-foreground">Conversion Rate</p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </div>
+      </Modal>
 
       <Modal open={formOpen} onClose={() => { setFormOpen(false); setEditing(null) }} title={editing ? "Edit Smart Link" : "Create Smart Link"}>
         <div className="space-y-4">
@@ -1793,7 +1772,7 @@ function AnalyticsTab({ isPro }: { isPro: boolean }) {
                 <p className="text-sm text-muted-foreground">Page Views</p>
                 <p className="text-3xl font-bold">{summary.byEvent.page_view || 0}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-blue/10 flex items-center justify-center text-blue">
+              <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <Eye className="w-6 h-6" />
               </div>
             </div>
@@ -1806,7 +1785,7 @@ function AnalyticsTab({ isPro }: { isPro: boolean }) {
                 <p className="text-sm text-muted-foreground">Link Clicks</p>
                 <p className="text-3xl font-bold">{summary.byEvent.link_click || 0}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-green/10 flex items-center justify-center text-green">
+              <div className="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <MousePointerClick className="w-6 h-6" />
               </div>
             </div>
@@ -1819,7 +1798,7 @@ function AnalyticsTab({ isPro }: { isPro: boolean }) {
                 <p className="text-sm text-muted-foreground">Email Captures</p>
                 <p className="text-3xl font-bold">{summary.byEvent.email_capture || 0}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-purple/10 flex items-center justify-center text-purple">
+              <div className="w-12 h-12 rounded-lg bg-violet-100 dark:bg-violet-900/20 flex items-center justify-center text-violet-600 dark:text-violet-400">
                 <Mail className="w-6 h-6" />
               </div>
             </div>

@@ -5,10 +5,11 @@ import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Crown, Image, Gift, Copy, Check, Globe, CreditCard, BarChart3, Mail, Trash2, Puzzle } from "lucide-react"
+import { Crown, Image, Gift, Copy, Check, Globe, CreditCard, BarChart3, Mail, Trash2, Puzzle, Eye, EyeOff } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import { PRICE_TIERS } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -40,6 +41,7 @@ export default function SettingsPage() {
   const [integrationsLoading, setIntegrationsLoading] = useState(true)
   const [configuring, setConfiguring] = useState<string | null>(null)
   const [keyValue, setKeyValue] = useState("")
+  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
 
   const integrationProviders = [
     { value: "google_analytics", label: "Google Analytics", icon: BarChart3, category: "analytics", desc: "Track page visits with GA4", placeholder: "G-XXXXXXXXXX" },
@@ -253,8 +255,8 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Avatar URL</label>
-            <Input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://example.com/avatar.jpg" />
+            <label className="text-sm font-medium">Avatar</label>
+            <ImageUpload value={avatarUrl} onChange={setAvatarUrl} />
             {avatarUrl && (
               <img src={avatarUrl} alt="Preview" className="w-16 h-16 rounded-full object-cover mt-2 border"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
@@ -385,6 +387,18 @@ export default function SettingsPage() {
                             <Badge variant={config.enabled ? "success" : "secondary"} className="text-xs">
                               {config.enabled ? "Active" : "Paused"}
                             </Badge>
+                            {config.key && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">
+                                  {showKeys[p.value] ? config.key : `${config.key.slice(0, 8)}••••`}
+                                </code>
+                                <button type="button" onClick={() => setShowKeys(s => ({ ...s, [p.value]: !s[p.value] }))}
+                                  className="hover:text-foreground transition-colors" aria-label="Toggle key visibility"
+                                >
+                                  {showKeys[p.value] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                </button>
+                              </div>
+                            )}
                             <Button size="sm" variant="outline" onClick={() => toggleIntegration(p.value, config.enabled)} className="h-9">
                               {config.enabled ? "Pause" : "Activate"}
                             </Button>
