@@ -2684,15 +2684,18 @@ export default function LinksPage() {
 
           {productForm && (
             <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
+              <CardContent className="pt-6 space-y-5">
+                <div className="grid sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Title *</label>
                     <Input value={prodTitle} onChange={(e) => setProdTitle(e.target.value)} placeholder="e.g. My eBook" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Price (USD) *</label>
-                    <Input type="number" step="0.01" min="0.50" value={prodPrice} onChange={(e) => setProdPrice(e.target.value)} placeholder="9.99" />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                      <Input type="number" step="0.01" min="0.50" value={prodPrice} onChange={(e) => setProdPrice(e.target.value)} placeholder="9.99" className="pl-7" />
+                    </div>
                   </div>
                   <div className="sm:col-span-2 space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Description</label>
@@ -2704,11 +2707,14 @@ export default function LinksPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">File Type</label>
-                    <Input value={prodFileType} onChange={(e) => setProdFileType(e.target.value)} placeholder="pdf, zip, mp3..." />
+                    <Input value={prodFileType} onChange={(e) => setProdFileType(e.target.value)} placeholder="pdf, zip, mp3, mov..." />
                   </div>
-                  <div className="sm:col-span-2 space-y-2">
+                  <div className="col-span-full space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Image URL</label>
                     <Input value={prodImageUrl} onChange={(e) => setProdImageUrl(e.target.value)} placeholder="https://example.com/cover.jpg" />
+                    {prodImageUrl && (
+                      <img src={prodImageUrl} alt="" className="w-full max-h-32 object-cover rounded-lg border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -2722,41 +2728,75 @@ export default function LinksPage() {
           )}
 
           {productsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-48 rounded-xl bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+              ))}
+            </div>
           ) : products.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <DollarSign className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-                <p className="text-muted-foreground">No products yet. Create your first digital product.</p>
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                  <DollarSign className="w-8 h-8 text-muted-foreground/40" />
+                </div>
+                <p className="text-muted-foreground">No products yet.</p>
+                <p className="text-sm text-muted-foreground/60 mt-1">Create your first digital product to sell directly from your page.</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {products.map((p: any) => (
-                <Card key={p.id} className={`${!p.isActive ? "opacity-50" : ""}`}>
-                  <CardContent className="pt-6">
-                    {p.imageUrl && <img src={p.imageUrl} alt="" className="w-full h-32 object-cover rounded-lg mb-3" />}
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold">{p.title}</h3>
-                        {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
+                <Card key={p.id} className={`group hover:shadow-md transition-shadow ${!p.isActive ? "opacity-60" : ""}`}>
+                  <CardContent className="p-0">
+                    {p.imageUrl ? (
+                      <div className="relative">
+                        <img src={p.imageUrl} alt="" className="w-full aspect-[2/1] object-cover rounded-t-xl" />
+                        {!p.isActive && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="secondary" className="text-[10px]">Inactive</Badge>
+                          </div>
+                        )}
                       </div>
-                      <Badge>${(p.price / 100).toFixed(2)}</Badge>
-                    </div>
-                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                      <span>{p.sold} sold</span>
-                      {p.fileType && <span>{p.fileType}</span>}
-                    </div>
-                    <div className="flex items-center gap-2 mt-4">
-                      <Button size="sm" variant="outline" onClick={() => startEditProduct(p)} className="rounded-lg text-xs">
-                        Edit
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => toggleProduct(p.id, p.isActive)} className="rounded-lg text-xs">
-                        {p.isActive ? "Pause" : "Activate"}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => removeProduct(p.id)} className="rounded-lg text-xs text-red-500">
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                    ) : (
+                      <div className="relative w-full aspect-[2/1] bg-muted/30 flex items-center justify-center rounded-t-xl">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+                        {!p.isActive && (
+                          <Badge variant="secondary" className="absolute top-2 left-2 text-[10px]">Inactive</Badge>
+                        )}
+                      </div>
+                    )}
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-sm truncate">{p.title}</h3>
+                          {p.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{p.description}</p>}
+                        </div>
+                        <Badge variant="outline" className="shrink-0 font-mono text-xs">${(p.price / 100).toFixed(2)}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          {p.sold} sold
+                        </span>
+                        {p.fileType && (
+                          <span className="flex items-center gap-1">
+                            <Download className="w-3 h-3" />
+                            {p.fileType}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 pt-1 border-t border-neutral-100 dark:border-neutral-800">
+                        <Button size="sm" variant="ghost" onClick={() => startEditProduct(p)} className="rounded-lg text-xs h-8">
+                          <Pencil className="w-3 h-3 mr-1.5" /> Edit
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => toggleProduct(p.id, p.isActive)} className="rounded-lg text-xs h-8">
+                          {p.isActive ? <Pause className="w-3 h-3 mr-1.5" /> : <Play className="w-3 h-3 mr-1.5" />}
+                          {p.isActive ? "Pause" : "Activate"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => removeProduct(p.id)} className="rounded-lg text-xs h-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
+                          <Trash2 className="w-3 h-3 mr-1.5" /> Delete
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

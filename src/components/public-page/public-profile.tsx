@@ -246,6 +246,7 @@ export function PublicProfile({
   const activeHover = hoverEffects.find((h) => h.id === hoverId) || hoverEffects[0]
   const activeFontWeight = fontWeightOptions.find((fw) => fw.id === fontWeightId) || fontWeightOptions[0]
   const isGrid = layoutId === "grid"
+  const isDarkTheme = activeTheme.textClass.includes("text-white")
   const bgGradient = customBg ? "" : `bg-gradient-to-b ${activeTheme.background}`
   const bgStyle = customBg ? { backgroundColor: customBg } : {}
   const borderColorValue = buttonBorderColor || accentColor
@@ -475,18 +476,23 @@ export function PublicProfile({
 
         {products.length > 0 && (
           <div className="mt-6 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Products</p>
+            <p className={`text-xs font-semibold uppercase tracking-wider ${isDarkTheme ? "text-white/60" : "text-neutral-500"} ${bioAlignment === "left" ? "text-left" : "text-center"}`}>Products</p>
             <div className="grid sm:grid-cols-2 gap-3">
               {products.map((p) => (
-                <div key={p.id} className="rounded-xl border bg-white/50 p-3 text-center">
-                  {p.imageUrl && <img src={p.imageUrl} alt="" className="w-full h-20 object-cover rounded-lg mb-2" />}
-                  <h3 className="text-sm font-semibold">{p.title}</h3>
-                  {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
-                  <p className="text-lg font-bold mt-2" style={{ color: accentColor }}>${(p.price / 100).toFixed(2)}</p>
-                  <button onClick={preview ? undefined : () => buyProduct(p.id)} disabled={buying === p.id || preview}
-                    className={`w-full mt-2 py-2 rounded-lg text-xs font-medium text-white transition-all ${preview ? "opacity-60" : "hover:opacity-90"}`}
-                    style={{ backgroundColor: accentColor }}
-                  >{buying === p.id ? "Redirecting..." : "Buy Now"}</button>
+                <div key={p.id} className={`rounded-xl shadow-sm overflow-hidden ${isDarkTheme ? "bg-white/10 border border-white/10" : "bg-white/80 border border-neutral-200"}`}>
+                  {p.imageUrl && <img src={p.imageUrl} alt="" className="w-full aspect-[2/1] object-cover" />}
+                  <div className="p-3 space-y-2">
+                    <h3 className={`text-sm font-semibold leading-tight ${isDarkTheme ? "text-white" : "text-neutral-900"}`}>{p.title}</h3>
+                    {p.description && <p className={`text-xs leading-relaxed ${isDarkTheme ? "text-white/60" : "text-neutral-500"}`}>{p.description}</p>}
+                    <div className="flex items-baseline justify-between">
+                      <p className="text-lg font-bold" style={{ color: accentColor }}>${(p.price / 100).toFixed(2)}</p>
+                      {p.sold > 0 && <span className={`text-[10px] ${isDarkTheme ? "text-white/50" : "text-neutral-400"}`}>{p.sold} sold</span>}
+                    </div>
+                    <button onClick={preview ? undefined : () => buyProduct(p.id)} disabled={buying === p.id || preview}
+                      className={`w-full py-2 text-xs font-semibold text-white transition-all duration-200 ${activeButtonStyle.className} ${activeHover.className} ${preview ? "opacity-60 cursor-default" : ""}`}
+                      style={{ backgroundColor: accentColor }}
+                    >{buying === p.id ? "Redirecting..." : "Buy Now"}</button>
+                  </div>
                 </div>
               ))}
             </div>
