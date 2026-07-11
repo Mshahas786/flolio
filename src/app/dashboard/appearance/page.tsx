@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/ui/image-upload";
 import {
   Crown,
   Lock,
@@ -92,10 +93,7 @@ const textPresetColors = [
 const tabs = [
   { id: "quickstart", label: "Quick Start", icon: Zap },
   { id: "theme", label: "Theme", icon: Palette },
-  { id: "buttons", label: "Buttons", icon: Square },
-  { id: "typography", label: "Typography", icon: Type },
-  { id: "layout", label: "Layout", icon: LayoutGrid },
-  { id: "effects", label: "Effects", icon: Sparkles },
+  { id: "style", label: "Style", icon: Square },
   { id: "visibility", label: "Visibility", icon: Eye },
   { id: "advanced", label: "Advanced", icon: Code },
 ] as const;
@@ -1025,292 +1023,213 @@ export default function AppearancePage() {
             )}
           </TabsContent>
 
-          {/* Buttons Tab */}
-          <TabsContent value="buttons" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
+          {/* Style Tab (merged: Buttons + Typography + Layout + Effects) */}
+          <TabsContent value="style" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
             <SectionCard
-              title="Button Style"
-              description="Choose the shape of your link buttons"
+              title="Buttons"
+              description="Shape, color, and weight of your link buttons"
               icon={<Square className="w-5 h-5" />}
             >
-              <div className="flex flex-wrap gap-3">
-                {buttonStyles.map((bs) => (
-                  <button
-                    key={bs.id}
-                    onClick={() => updateSetting("buttonStyle", bs.id)}
-                    aria-pressed={settings.buttonStyle === bs.id}
-                    className={cn(
-                      "flex-1 min-w-[120px] py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all",
-                      settings.buttonStyle === bs.id
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
-                        : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
-                    )}
-                  >
-                    <div
-                      className={cn("w-full h-8 mx-auto mb-2 transition-colors", bs.className)}
-                      style={{ backgroundColor: settings.accentColor || "#c04a2b" }}
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Button Shape</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {buttonStyles.map((bs) => (
+                      <button
+                        key={bs.id}
+                        onClick={() => updateSetting("buttonStyle", bs.id)}
+                        aria-pressed={settings.buttonStyle === bs.id}
+                        className={cn(
+                          "flex-1 min-w-[100px] py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all",
+                          settings.buttonStyle === bs.id
+                            ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                            : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
+                        )}
+                      >
+                        <div className={cn("w-full h-8 mx-auto mb-2 transition-colors", bs.className)}
+                          style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
+                        {bs.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Text Color</Label>
+                    <ColorPicker
+                      value={settings.buttonTextColor}
+                      onChange={(c) => updateSetting("buttonTextColor", c)}
+                      presets={textPresetColors}
                     />
-                    {bs.name}
-                  </button>
-                ))}
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Border Color</Label>
+                    <ColorPicker
+                      value={settings.buttonBorderColor}
+                      onChange={(c) => updateSetting("buttonBorderColor", c)}
+                      presets={["#ffffff", "#e5e7eb", "#9ca3af", "#374151", "#000000", settings.accentColor].filter(Boolean)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Font Weight</Label>
+                  <OptionGrid
+                    options={fontWeightOptions as any}
+                    value={settings.buttonFontWeight}
+                    onChange={(v) => updateSetting("buttonFontWeight", v as any)}
+                  />
+                </div>
               </div>
             </SectionCard>
 
             <SectionCard
-              title="Bio Alignment"
-              description="How your bio text is aligned"
-              icon={<AlignLeft className="w-5 h-5" />}
-            >
-              <div className="flex flex-wrap gap-3">
-                {alignmentOptions.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => updateSetting("bioAlignment", opt.id)}
-                    aria-pressed={settings.bioAlignment === opt.id}
-                    className={cn(
-                      "flex-1 min-w-[100px] py-3 px-4 text-sm font-medium border-2 rounded-xl transition-all",
-                      settings.bioAlignment === opt.id
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
-                        : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
-                    )}
-                  >
-                    {opt.name}
-                  </button>
-                ))}
-              </div>
-            </SectionCard>
-
-            {isPro && (
-              <SectionCard
-                title="Button Text Color"
-                description="Customize the text color on your buttons"
-                icon={<Type className="w-5 h-5" />}
-              >
-                <ColorPicker
-                  value={settings.buttonTextColor}
-                  onChange={(c) => updateSetting("buttonTextColor", c)}
-                  presets={textPresetColors}
-                  label="Button Text Color"
-                />
-              </SectionCard>
-            )}
-
-            {isPro && (
-              <SectionCard
-                title="Button Border Color"
-                description="Override the border color on your link buttons"
-                icon={<Box className="w-5 h-5" />}
-              >
-                <ColorPicker
-                  value={settings.buttonBorderColor}
-                  onChange={(c) => updateSetting("buttonBorderColor", c)}
-                  presets={["#ffffff", "#e5e7eb", "#9ca3af", "#374151", "#000000", settings.accentColor].filter(Boolean)}
-                  label="Button Border Color"
-                />
-              </SectionCard>
-            )}
-
-            {isPro && (
-              <SectionCard
-                title="Button Font Weight"
-                description="Control how bold your link button text appears"
-                icon={<Type className="w-5 h-5" />}
-              >
-              <OptionGrid
-                options={fontWeightOptions as any}
-                value={settings.buttonFontWeight}
-                onChange={(v) => updateSetting("buttonFontWeight", v as any)}
-              />
-              </SectionCard>
-            )}
-
-            <SectionCard
-              title="Avatar Shape"
-              description="Change how your profile picture is displayed"
-              icon={<Image className="w-5 h-5" />}
-              pro={!isPro}
-            >
-              <div className="flex flex-wrap gap-3">
-                {avatarShapes.map((shape) => (
-                  <button
-                    key={shape.id}
-                    onClick={() => !isPro || updateSetting("avatarShape", shape.id)}
-                    disabled={!isPro}
-                    aria-pressed={settings.avatarShape === shape.id && isPro}
-                    className={cn(
-                      "flex-1 min-w-[100px] py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all",
-                      settings.avatarShape === shape.id && isPro
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
-                        : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100",
-                      !isPro && "opacity-60 cursor-not-allowed"
-                    )}
-                  >
-                    <div className={cn("w-12 h-12 mx-auto mb-2", shape.className)} style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
-                    {shape.name}
-                    {!isPro && <ProBadge />}
-                  </button>
-                ))}
-              </div>
-            </SectionCard>
-          </TabsContent>
-
-          {/* Typography Tab */}
-          <TabsContent value="typography" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
-            <SectionCard
-              title="Font Family"
-              description="Choose the font for your link buttons"
+              title="Typography"
+              description="Font family, size, and alignment"
               icon={<Type className="w-5 h-5" />}
             >
-              <OptionGrid
-                options={fontFamilies as any}
-                value={settings.fontFamily}
-                onChange={(v) => updateSetting("fontFamily", v as any)}
-                renderOption={(opt: any, selected) => (
-                  <div className="flex flex-col items-center gap-1 w-full">
-                    <span style={{ fontFamily: opt.family }} className="text-base">{opt.name}</span>
-                    <span style={{ fontFamily: opt.family }} className="text-xs opacity-60">{opt.preview}</span>
-                  </div>
-                )}
-              />
-            </SectionCard>
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Font Family</Label>
+                  <OptionGrid
+                    options={fontFamilies as any}
+                    value={settings.fontFamily}
+                    onChange={(v) => updateSetting("fontFamily", v as any)}
+                    renderOption={(opt: any, selected) => (
+                      <div className="flex flex-col items-center gap-1 w-full">
+                        <span style={{ fontFamily: opt.family }} className="text-base">{opt.name}</span>
+                        <span style={{ fontFamily: opt.family }} className="text-xs opacity-60">{opt.preview}</span>
+                      </div>
+                    )}
+                  />
+                </div>
 
-            <SectionCard
-              title="Font Size"
-              description="Adjust the text size on your link buttons"
-              icon={<Type className="w-5 h-5" />}
-            >
-              <OptionGrid
-                options={fontSizeOptions as any}
-                value={settings.fontSize}
-                onChange={(v) => updateSetting("fontSize", v as any)}
-                renderOption={(opt: any, selected) => (
-                  <div className="flex flex-col items-center gap-1">
-                    <span className={opt.className}>Aa</span>
-                    <span className="text-xs opacity-60">{opt.name}</span>
-                  </div>
-                )}
-              />
-            </SectionCard>
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Font Size</Label>
+                  <OptionGrid
+                    options={fontSizeOptions as any}
+                    value={settings.fontSize}
+                    onChange={(v) => updateSetting("fontSize", v as any)}
+                    renderOption={(opt: any, selected) => (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={opt.className}>Aa</span>
+                        <span className="text-xs opacity-60">{opt.name}</span>
+                      </div>
+                    )}
+                  />
+                </div>
 
-            <SectionCard
-              title="Live Typography Preview"
-              description="See how your text looks with the selected font and size"
-              icon={<Eye className="w-5 h-5" />}
-            >
-              <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-6">
-                <div
-                  className={cn(
-                    fontSizeOptions.find(s => s.id === settings.fontSize)?.className,
-                  )}
-                  style={{
-                    fontFamily: fontFamilies.find(f => f.id === settings.fontFamily)?.family,
-                  }}
-                >
-                  <p className="font-semibold text-neutral-900 dark:text-neutral-100">Your Name</p>
-                  <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">Creator & Designer</p>
-                  <div className="mt-4 space-y-2">
-                    <div
-                      className={cn(
-                        "px-4 py-2 text-center",
-                        buttonStyles.find(s => s.id === settings.buttonStyle)?.className,
-                      )}
-                      style={{ backgroundColor: settings.accentColor || "#c04a2b", color: settings.buttonTextColor || "#fff" }}
-                    >
-                      Visit My Portfolio
-                    </div>
-                    <div
-                      className={cn(
-                        "px-4 py-2 text-center",
-                        buttonStyles.find(s => s.id === settings.buttonStyle)?.className,
-                      )}
-                      style={{ backgroundColor: settings.accentColor || "#c04a2b", color: settings.buttonTextColor || "#fff" }}
-                    >
-                      Follow on Twitter
-                    </div>
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Bio Alignment</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {alignmentOptions.map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => updateSetting("bioAlignment", opt.id)}
+                        aria-pressed={settings.bioAlignment === opt.id}
+                        className={cn(
+                          "flex-1 min-w-[80px] py-3 px-4 text-sm font-medium border-2 rounded-xl transition-all",
+                          settings.bioAlignment === opt.id
+                            ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                            : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
+                        )}
+                      >
+                        {opt.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Avatar Shape</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {avatarShapes.map((shape) => (
+                      <button
+                        key={shape.id}
+                        onClick={() => updateSetting("avatarShape", shape.id)}
+                        aria-pressed={settings.avatarShape === shape.id}
+                        className={cn(
+                          "flex-1 min-w-[80px] py-4 px-4 text-sm font-medium border-2 rounded-xl transition-all",
+                          settings.avatarShape === shape.id
+                            ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                            : "border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:text-neutral-900 dark:border-neutral-700 dark:hover:border-neutral-600 dark:text-neutral-400 dark:hover:text-neutral-100"
+                        )}
+                      >
+                        <div className={cn("w-12 h-12 mx-auto mb-2", shape.className)} style={{ backgroundColor: settings.accentColor || "#c04a2b" }} />
+                        {shape.name}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
             </SectionCard>
-          </TabsContent>
-
-          {/* Layout Tab */}
-          <TabsContent value="layout" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
-            <SectionCard
-              title="Link Border"
-              description="Add a border around your link buttons"
-              icon={<Square className="w-5 h-5" />}
-            >
-              <OptionGrid
-                options={borderWidthOptions as any}
-                value={settings.linkBorderWidth}
-                onChange={(v) => updateSetting("linkBorderWidth", v as any)}
-              />
-              {settings.linkBorderWidth !== "none" && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
-                  Border color matches your accent color.
-                </p>
-              )}
-            </SectionCard>
 
             <SectionCard
-              title="Link Shadow"
-              description="Add a shadow effect to your link buttons"
-              icon={<Layers className="w-5 h-5" />}
-            >
-              <OptionGrid
-                options={shadowOptions as any}
-                value={settings.linkShadow}
-                onChange={(v) => updateSetting("linkShadow", v as any)}
-              />
-            </SectionCard>
-
-            <SectionCard
-              title="Link Spacing"
-              description="Control the spacing between your links"
-              icon={<Layers className="w-5 h-5" />}
-            >
-              <OptionGrid
-                options={spacingOptions as any}
-                value={settings.linkSpacing}
-                onChange={(v) => updateSetting("linkSpacing", v as any)}
-              />
-            </SectionCard>
-
-            <SectionCard
-              title="Layout Mode"
-              description="Choose how your links are arranged on the page"
+              title="Layout"
+              description="Spacing, borders, shadows, and grid arrangement"
               icon={<LayoutGrid className="w-5 h-5" />}
             >
-              <OptionGrid
-                options={layoutModes as any}
-                value={settings.layoutMode}
-                onChange={(v) => updateSetting("layoutMode", v as any)}
-                renderOption={(opt: any, selected) => (
-                  <>
-                    {opt.id === "list" ? (
-                      <div className="flex flex-col gap-1.5 w-12">
-                        <div className="h-2 bg-current rounded opacity-40" />
-                        <div className="h-2 bg-current rounded opacity-40" />
-                        <div className="h-2 bg-current rounded opacity-40" />
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-1.5 w-12">
-                        <div className="h-2 bg-current rounded opacity-40" />
-                        <div className="h-2 bg-current rounded opacity-40" />
-                        <div className="h-2 bg-current rounded opacity-40" />
-                        <div className="h-2 bg-current rounded opacity-40" />
-                      </div>
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Layout Mode</Label>
+                  <OptionGrid
+                    options={layoutModes as any}
+                    value={settings.layoutMode}
+                    onChange={(v) => updateSetting("layoutMode", v as any)}
+                    renderOption={(opt: any, selected) => (
+                      <>
+                        {opt.id === "list" ? (
+                          <div className="flex flex-col gap-1.5 w-12">
+                            <div className="h-2 bg-current rounded opacity-40" />
+                            <div className="h-2 bg-current rounded opacity-40" />
+                            <div className="h-2 bg-current rounded opacity-40" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-1.5 w-12">
+                            <div className="h-2 bg-current rounded opacity-40" />
+                            <div className="h-2 bg-current rounded opacity-40" />
+                            <div className="h-2 bg-current rounded opacity-40" />
+                            <div className="h-2 bg-current rounded opacity-40" />
+                          </div>
+                        )}
+                        <span>{opt.name}</span>
+                      </>
                     )}
-                    <span>{opt.name}</span>
-                  </>
-                )}
-              />
-            </SectionCard>
-          </TabsContent>
+                  />
+                </div>
 
-          {/* Effects Tab */}
-          <TabsContent value="effects" className="space-y-6 pt-4 animate-in fade-in-0 duration-200">
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Border</Label>
+                    <OptionGrid
+                      options={borderWidthOptions as any}
+                      value={settings.linkBorderWidth}
+                      onChange={(v) => updateSetting("linkBorderWidth", v as any)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Shadow</Label>
+                    <OptionGrid
+                      options={shadowOptions as any}
+                      value={settings.linkShadow}
+                      onChange={(v) => updateSetting("linkShadow", v as any)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-3 block">Spacing</Label>
+                    <OptionGrid
+                      options={spacingOptions as any}
+                      value={settings.linkSpacing}
+                      onChange={(v) => updateSetting("linkSpacing", v as any)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
             <SectionCard
-              title="Hover Effect"
+              title="Hover Effects"
               description="Animation when someone hovers over your link buttons"
               icon={<MousePointer className="w-5 h-5" />}
             >
@@ -1416,19 +1335,10 @@ export default function AppearancePage() {
               icon={<Image className="w-5 h-5" />}
             >
               <div className="space-y-2">
-                <Input
+                <ImageUpload
                   value={settings.headerImageUrl}
-                  onChange={(e) => updateSetting("headerImageUrl", e.target.value)}
-                  placeholder="https://example.com/banner.jpg"
+                  onChange={(url) => updateSetting("headerImageUrl", url)}
                 />
-                {settings.headerImageUrl && (
-                  <img
-                    src={settings.headerImageUrl}
-                    alt="Header preview"
-                    className="w-full h-32 object-cover rounded-xl border"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                  />
-                )}
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   Recommended size: 1200x600px. Will be cropped to 2:1 ratio.
                 </p>
