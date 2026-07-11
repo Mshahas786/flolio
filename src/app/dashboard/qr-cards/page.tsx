@@ -47,8 +47,6 @@ export default function QRCardsPage() {
             </CardHeader>
             <CardContent>
               <QRCardGrid
-                url={profileUrl}
-                label={customLabel || `@${username}`}
                 selectedTemplate={selectedTemplate}
                 onSelectTemplate={setSelectedTemplate}
               />
@@ -113,7 +111,6 @@ export default function QRCardsPage() {
                   url={profileUrl}
                   label={customLabel || `@${username}`}
                   template={template}
-                  size={280}
                 />
               </CardContent>
             </Card>

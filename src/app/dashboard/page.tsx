@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -186,24 +186,20 @@ export default function DashboardPage() {
   )
 }
 
-function QRProfileCard({ url, username, siteUrl }: { url: string; username: string; siteUrl: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+function QRProfileCard({ url, username }: { url: string; username: string; siteUrl: string }) {
+  const [qrSrc, setQrSrc] = useState<string>("")
 
   useEffect(() => {
-    if (canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, url, {
-        width: 200,
-        margin: 2,
-        color: { dark: "#171717", light: "#ffffff" },
-      })
-    }
+    QRCode.toDataURL(url, { width: 200, margin: 2, color: { dark: "#171717", light: "#ffffff" } })
+      .then(setQrSrc)
+      .catch(() => {})
   }, [url])
 
   const download = () => {
-    if (!canvasRef.current) return
+    if (!qrSrc) return
     const link = document.createElement("a")
     link.download = `flolio-${username}-qr.png`
-    link.href = canvasRef.current.toDataURL("image/png")
+    link.href = qrSrc
     link.click()
   }
 
@@ -216,13 +212,19 @@ function QRProfileCard({ url, username, siteUrl }: { url: string; username: stri
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col sm:flex-row items-start gap-6">
-        <canvas ref={canvasRef} className="w-32 h-32 rounded-xl border" />
+        {qrSrc ? (
+          <img src={qrSrc} alt="Profile QR Code" className="w-32 h-32 rounded-xl border" />
+        ) : (
+          <div className="w-32 h-32 rounded-xl border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+            Loading...
+          </div>
+        )}
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Scan or download this QR code to share your Flolio page instantly.
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={download}>
+            <Button variant="outline" size="sm" onClick={download} disabled={!qrSrc}>
               <QrCode className="w-4 h-4 mr-2" />
               Download QR Code
             </Button>
@@ -240,31 +242,33 @@ function QRProfileCard({ url, username, siteUrl }: { url: string; username: stri
 }
 
 function QRCodeModalContent({ url, title }: { url: string; title: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [qrSrc, setQrSrc] = useState<string>("")
 
   useEffect(() => {
-    if (canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, url, {
-        width: 250,
-        margin: 2,
-        color: { dark: "#171717", light: "#ffffff" },
-      })
-    }
+    QRCode.toDataURL(url, { width: 250, margin: 2, color: { dark: "#171717", light: "#ffffff" } })
+      .then(setQrSrc)
+      .catch(() => {})
   }, [url])
 
   const download = () => {
-    if (!canvasRef.current) return
+    if (!qrSrc) return
     const link = document.createElement("a")
     link.download = `flolio-${title.toLowerCase().replace(/\s+/g, "-")}-qr.png`
-    link.href = canvasRef.current.toDataURL("image/png")
+    link.href = qrSrc
     link.click()
   }
 
   return (
     <div className="text-center space-y-4">
       <p className="text-sm font-medium">{title}</p>
-      <canvas ref={canvasRef} className="mx-auto rounded-lg" />
-      <Button variant="outline" size="sm" className="w-full" onClick={download}>
+      {qrSrc ? (
+        <img src={qrSrc} alt={`QR for ${title}`} className="mx-auto rounded-lg" />
+      ) : (
+        <div className="w-[250px] h-[250px] mx-auto rounded-lg bg-muted flex items-center justify-center text-sm text-muted-foreground">
+          Loading...
+        </div>
+      )}
+      <Button variant="outline" size="sm" className="w-full" onClick={download} disabled={!qrSrc}>
         <QrCode className="w-4 h-4 mr-2" />
         Download QR Code
       </Button>

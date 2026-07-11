@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from "react"
 import QRCode from "qrcode"
+import { toPng } from "html-to-image"
 import { cn } from "@/lib/utils"
 import { Download, Check, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,103 +10,112 @@ import { Button } from "@/components/ui/button"
 export interface QRCardTemplate {
   id: string
   name: string
-  bg: string
-  fg: string
-  qrColor: string
-  qrBg: string
-  accent: string
-  labelColor: string
   desc: string
+  containerClass: string
+  qrClass: string
+  labelClass: string
+  tagClass: string
+  badgeClass: string
+  previewBg: string
+  previewQr: string
 }
 
 export const qrTemplates: QRCardTemplate[] = [
   {
-    id: "minimal",
-    name: "Minimal",
-    bg: "#ffffff",
-    fg: "#171717",
-    qrColor: "#171717",
-    qrBg: "#ffffff",
-    accent: "#f5f5f5",
-    labelColor: "#737373",
-    desc: "Clean white card",
+    id: "ivory",
+    name: "Ivory",
+    desc: "Warm minimal card",
+    containerClass: "bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200",
+    qrClass: "bg-white p-2.5 rounded-xl shadow-sm border border-stone-100",
+    labelClass: "text-stone-900",
+    tagClass: "text-stone-500",
+    badgeClass: "bg-stone-200 text-stone-700",
+    previewBg: "from-stone-50 to-stone-100",
+    previewQr: "bg-white",
   },
   {
-    id: "dark",
-    name: "Dark",
-    bg: "#171717",
-    fg: "#ffffff",
-    qrColor: "#ffffff",
-    qrBg: "#171717",
-    accent: "#262626",
-    labelColor: "#a3a3a3",
-    desc: "Sleek dark card",
+    id: "obsidian",
+    name: "Obsidian",
+    desc: "Bold dark card",
+    containerClass: "bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800",
+    qrClass: "bg-neutral-800 p-2.5 rounded-xl border border-neutral-700",
+    labelClass: "text-neutral-100",
+    tagClass: "text-neutral-400",
+    badgeClass: "bg-neutral-800 text-neutral-300",
+    previewBg: "from-neutral-900 to-neutral-950",
+    previewQr: "bg-neutral-800",
   },
   {
-    id: "brand",
-    name: "Brand",
-    bg: "linear-gradient(135deg, #e83e1c 0%, #ff5329 100%)",
-    fg: "#ffffff",
-    qrColor: "#ffffff",
-    qrBg: "rgba(255,255,255,0.15)",
-    accent: "rgba(255,255,255,0.2)",
-    labelColor: "rgba(255,255,255,0.8)",
-    desc: "Your brand colors",
+    id: "ember",
+    name: "Ember",
+    desc: "Warm brand glow",
+    containerClass: "bg-gradient-to-br from-brand-600 to-brand-800 border border-brand-500",
+    qrClass: "bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/20",
+    labelClass: "text-white",
+    tagClass: "text-white/75",
+    badgeClass: "bg-white/20 text-white",
+    previewBg: "from-brand-600 to-brand-800",
+    previewQr: "bg-white/15",
   },
   {
-    id: "vibrant",
-    name: "Vibrant",
-    bg: "linear-gradient(135deg, #7c3aed 0%, #ec4899 50%, #f59e0b 100%)",
-    fg: "#ffffff",
-    qrColor: "#ffffff",
-    qrBg: "rgba(255,255,255,0.12)",
-    accent: "rgba(255,255,255,0.18)",
-    labelColor: "rgba(255,255,255,0.85)",
-    desc: "Colorful gradient",
+    id: "prism",
+    name: "Prism",
+    desc: "Vibrant gradient",
+    containerClass: "bg-gradient-to-br from-violet-600 via-fuchsia-500 to-amber-500 border border-violet-400/30",
+    qrClass: "bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/20",
+    labelClass: "text-white",
+    tagClass: "text-white/75",
+    badgeClass: "bg-white/20 text-white",
+    previewBg: "from-violet-600 via-fuchsia-500 to-amber-500",
+    previewQr: "bg-white/15",
   },
   {
-    id: "ocean",
-    name: "Ocean",
-    bg: "linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)",
-    fg: "#ffffff",
-    qrColor: "#ffffff",
-    qrBg: "rgba(255,255,255,0.12)",
-    accent: "rgba(255,255,255,0.18)",
-    labelColor: "rgba(255,255,255,0.85)",
-    desc: "Blue wave gradient",
+    id: "lagoon",
+    name: "Lagoon",
+    desc: "Ocean blue tones",
+    containerClass: "bg-gradient-to-br from-cyan-500 to-blue-700 border border-cyan-400/30",
+    qrClass: "bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/20",
+    labelClass: "text-white",
+    tagClass: "text-white/75",
+    badgeClass: "bg-white/20 text-white",
+    previewBg: "from-cyan-500 to-blue-700",
+    previewQr: "bg-white/15",
   },
   {
     id: "midnight",
     name: "Midnight",
-    bg: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-    fg: "#e2e8f0",
-    qrColor: "#38bdf8",
-    qrBg: "#0f172a",
-    accent: "#1e293b",
-    labelColor: "#94a3b8",
-    desc: "Deep navy glow",
+    desc: "Deep navy with glow",
+    containerClass: "bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700",
+    qrClass: "bg-slate-800/80 p-2.5 rounded-xl backdrop-blur-sm border border-sky-500/30",
+    labelClass: "text-sky-100",
+    tagClass: "text-slate-400",
+    badgeClass: "bg-sky-500/20 text-sky-300",
+    previewBg: "from-slate-900 to-slate-800",
+    previewQr: "bg-slate-800/80",
   },
   {
-    id: "nature",
-    name: "Nature",
-    bg: "linear-gradient(135deg, #166534 0%, #22c55e 100%)",
-    fg: "#ffffff",
-    qrColor: "#ffffff",
-    qrBg: "rgba(255,255,255,0.12)",
-    accent: "rgba(255,255,255,0.18)",
-    labelColor: "rgba(255,255,255,0.85)",
+    id: "meadow",
+    name: "Meadow",
     desc: "Fresh green tones",
+    containerClass: "bg-gradient-to-br from-emerald-600 to-green-800 border border-emerald-500/30",
+    qrClass: "bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/20",
+    labelClass: "text-white",
+    tagClass: "text-white/75",
+    badgeClass: "bg-white/20 text-white",
+    previewBg: "from-emerald-600 to-green-800",
+    previewQr: "bg-white/15",
   },
   {
-    id: "sunset",
-    name: "Sunset",
-    bg: "linear-gradient(135deg, #dc2626 0%, #f59e0b 100%)",
-    fg: "#ffffff",
-    qrColor: "#ffffff",
-    qrBg: "rgba(255,255,255,0.12)",
-    accent: "rgba(255,255,255,0.18)",
-    labelColor: "rgba(255,255,255,0.85)",
-    desc: "Warm sunset glow",
+    id: "sorbet",
+    name: "Sorbet",
+    desc: "Warm sunset blend",
+    containerClass: "bg-gradient-to-br from-rose-500 via-orange-400 to-yellow-400 border border-rose-300/30",
+    qrClass: "bg-white/15 p-2.5 rounded-xl backdrop-blur-sm border border-white/20",
+    labelClass: "text-white",
+    tagClass: "text-white/75",
+    badgeClass: "bg-white/20 text-white",
+    previewBg: "from-rose-500 via-orange-400 to-yellow-400",
+    previewQr: "bg-white/15",
   },
 ]
 
@@ -113,119 +123,57 @@ interface QRCardProps {
   url: string
   label: string
   template: QRCardTemplate
-  size?: number
   className?: string
   onDownload?: () => void
 }
 
-export function QRCard({ url, label, template, size = 280, className, onDownload }: QRCardProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+export function QRCard({ url, label, template, className, onDownload }: QRCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string>("")
+  const [qrReady, setQrReady] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
+    setQrReady(false)
     async function generateQR() {
       try {
         const dataUrl = await QRCode.toDataURL(url, {
-          width: size * 0.55,
-          margin: 1,
+          width: 280,
+          margin: 2,
           color: {
-            dark: template.qrColor,
-            light: template.qrBg,
+            dark: template.id === "obsidian" || template.id === "midnight" ? "#ffffff" : "#171717",
+            light: "transparent",
           },
         })
         setQrDataUrl(dataUrl)
+        setQrReady(true)
       } catch {
         console.error("Failed to generate QR code")
       }
     }
     generateQR()
-  }, [url, size, template.qrColor, template.qrBg])
+  }, [url, template.id])
 
-  const renderToCanvas = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !qrDataUrl) return
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const cardW = size
-    const cardH = size * 1.35
-    canvas.width = cardW * 2
-    canvas.height = cardH * 2
-    ctx.scale(2, 2)
-
-    const isGradient = template.bg.startsWith("linear-gradient")
-    if (isGradient) {
-      const match = template.bg.match(/linear-gradient\(([^)]+)\)/)
-      if (match) {
-        const parts = match[1].split(",")
-        const angle = parts[0].trim()
-        const colors = parts.slice(1).map((c) => c.trim())
-        const radAngle = parseFloat(angle) * (Math.PI / 180)
-        const x1 = 0.5 + 0.5 * Math.cos(radAngle + Math.PI)
-        const y1 = 0.5 + 0.5 * Math.sin(radAngle + Math.PI)
-        const x2 = 0.5 + 0.5 * Math.cos(radAngle)
-        const y2 = 0.5 + 0.5 * Math.sin(radAngle)
-        const grad = ctx.createLinearGradient(x1 * cardW, y1 * cardH, x2 * cardW, y2 * cardH)
-        colors.forEach((c, i) => {
-          grad.addColorStop(i / (colors.length - 1 || 1), c.trim())
-        })
-        ctx.fillStyle = grad
-      } else {
-        ctx.fillStyle = "#ffffff"
-      }
-    } else {
-      ctx.fillStyle = template.bg
+  const downloadCard = useCallback(async () => {
+    if (!cardRef.current || !qrReady) return
+    setDownloading(true)
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        quality: 1,
+        pixelRatio: 3,
+        cacheBust: true,
+      })
+      const link = document.createElement("a")
+      link.download = `flolio-qr-${label.toLowerCase().replace(/\s+/g, "-")}.png`
+      link.href = dataUrl
+      link.click()
+      onDownload?.()
+    } catch {
+      console.error("Failed to download QR card")
     }
-    ctx.beginPath()
-    ctx.roundRect(0, 0, cardW, cardH, 20)
-    ctx.fill()
-
-    ctx.fillStyle = template.accent
-    ctx.beginPath()
-    ctx.roundRect(12, 12, cardW - 24, cardH - 24, 14)
-    ctx.fill()
-
-    const img = new Image()
-    img.onload = () => {
-      const qrSize = cardW * 0.48
-      const qrX = (cardW - qrSize) / 2
-      const qrY = cardH * 0.12
-      ctx.beginPath()
-      ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12)
-      ctx.fillStyle = isGradient ? "rgba(255,255,255,0.1)" : template.bg
-      ctx.fill()
-      ctx.drawImage(img, qrX, qrY, qrSize, qrSize)
-
-      ctx.fillStyle = template.fg
-      ctx.font = `bold ${Math.round(cardW * 0.045)}px system-ui, sans-serif`
-      ctx.textAlign = "center"
-      ctx.textBaseline = "middle"
-      ctx.fillText(label, cardW / 2, cardH * 0.78)
-
-      ctx.fillStyle = template.labelColor
-      ctx.font = `${Math.round(cardW * 0.028)}px system-ui, sans-serif`
-      ctx.fillText("Scan to visit", cardW / 2, cardH * 0.86)
-    }
-    img.src = qrDataUrl
-  }, [qrDataUrl, size, template, label])
-
-  useEffect(() => {
-    if (qrDataUrl) {
-      renderToCanvas()
-    }
-  }, [qrDataUrl, renderToCanvas])
-
-  const downloadCard = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const link = document.createElement("a")
-    link.download = `flolio-qr-${label.toLowerCase().replace(/\s+/g, "-")}.png`
-    link.href = canvas.toDataURL("image/png")
-    link.click()
-    onDownload?.()
-  }, [label, onDownload])
+    setDownloading(false)
+  }, [label, onDownload, qrReady])
 
   const copyUrl = useCallback(() => {
     navigator.clipboard.writeText(url)
@@ -235,17 +183,48 @@ export function QRCard({ url, label, template, size = 280, className, onDownload
 
   return (
     <div className={cn("flex flex-col items-center gap-4", className)}>
-      <canvas
-        ref={canvasRef}
-        className="w-full max-w-[320px] rounded-2xl shadow-lg"
-        style={{ aspectRatio: "1 / 1.35" }}
-      />
-      <div className="flex gap-2 w-full max-w-[320px]">
+      <div
+        ref={cardRef}
+        className={cn(
+          "w-[300px] h-[400px] rounded-2xl flex flex-col items-center justify-center p-6 relative overflow-hidden select-none",
+          template.containerClass,
+        )}
+      >
+        <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(circle_at_50%_0%,white,transparent_70%)]" />
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5 blur-xl" />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5 blur-xl" />
+
+        <div className={cn("mb-5", template.qrClass)}>
+          {qrReady ? (
+            <img src={qrDataUrl} alt="QR" className="w-36 h-36" />
+          ) : (
+            <div className="w-36 h-36 flex items-center justify-center text-sm text-muted-foreground">
+              Generating...
+            </div>
+          )}
+        </div>
+
+        <span className={cn("text-lg font-bold tracking-tight", template.labelClass)}>
+          {label}
+        </span>
+        <span className={cn("text-xs mt-1", template.tagClass)}>
+          Scan to visit profile
+        </span>
+
+        <div className={cn("mt-4 px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider", template.badgeClass)}>
+          Flolio
+        </div>
+      </div>
+
+      <div className="flex gap-2 w-[300px]">
         <Button
           variant="default"
           size="sm"
           className="flex-1"
           onClick={downloadCard}
+          disabled={!qrReady || downloading}
+          loading={downloading}
+          loadingText="Downloading..."
           leftIcon={<Download className="w-4 h-4" />}
         >
           Download Card
@@ -264,13 +243,11 @@ export function QRCard({ url, label, template, size = 280, className, onDownload
 }
 
 interface QRCardGridProps {
-  url: string
-  label: string
   selectedTemplate: string
   onSelectTemplate: (id: string) => void
 }
 
-export function QRCardGrid({ url, label, selectedTemplate, onSelectTemplate }: QRCardGridProps) {
+export function QRCardGrid({ selectedTemplate, onSelectTemplate }: QRCardGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
       {qrTemplates.map((tpl) => (
@@ -285,20 +262,12 @@ export function QRCardGrid({ url, label, selectedTemplate, onSelectTemplate }: Q
           )}
         >
           <div
-            className="h-20 rounded-lg mb-2 flex items-center justify-center"
-            style={{
-              background: tpl.bg,
-              border: tpl.id === "minimal" ? "1px solid #e5e5e5" : "none",
-            }}
+            className={cn(
+              "h-20 rounded-lg mb-2 flex items-center justify-center bg-gradient-to-br",
+              tpl.previewBg,
+            )}
           >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-[10px] font-bold"
-              style={{
-                background: tpl.qrBg,
-                color: tpl.qrColor,
-                border: tpl.id === "minimal" ? "1px solid #e5e5e5" : "none",
-              }}
-            >
+            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-[10px] font-bold text-white/80", tpl.previewQr)}>
               QR
             </div>
           </div>
