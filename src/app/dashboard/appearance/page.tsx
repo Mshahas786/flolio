@@ -1605,7 +1605,7 @@ export default function AppearancePage() {
 
       {/* Live Preview Panel */}
       {previewData && (
-        <div className="hidden lg:block w-80 flex-shrink-0 sticky top-6" style={{ maxHeight: "calc(100vh - 2rem)" }}>
+        <div className="mt-8 lg:mt-0 lg:w-80 lg:flex-shrink-0 lg:sticky lg:top-6" style={{ maxHeight: "calc(100vh - 2rem)" }}>
           <div className="bg-white dark:bg-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-lg overflow-hidden">
             <div className="bg-neutral-100 dark:bg-neutral-900 px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
               <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Live Preview</span>
@@ -1672,19 +1672,22 @@ export default function AppearancePage() {
         </div>
       )}
 
-      {/* Mobile Preview Sheet */}
+      {/* Preview Modal (works on all screen sizes) */}
       {showMobilePreview && previewData && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => setShowMobilePreview(false)}
           onKeyDown={(e) => { if (e.key === "Escape") setShowMobilePreview(false); }}
           role="dialog"
           aria-modal="true"
           aria-label="Mobile preview"
         >
-          <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-neutral-950 rounded-t-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white dark:bg-neutral-950 z-10 pt-3 pb-2 flex items-center justify-center">
-              <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full" />
+          <div
+            className="w-full sm:max-w-sm bg-white dark:bg-neutral-950 rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-neutral-950 z-10 pt-3 pb-2 flex items-center justify-center border-b border-neutral-200 dark:border-neutral-800">
+              <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Mobile Preview</span>
               <button
                 onClick={() => setShowMobilePreview(false)}
                 className="absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
@@ -1693,7 +1696,7 @@ export default function AppearancePage() {
                 <RotateCcw className="w-5 h-5" />
               </button>
             </div>
-            <div className="px-2 pb-6">
+            <div className="px-3 pb-6 pt-2">
               <ProfilePreview
                 name={userName}
                 bio=""
@@ -1746,11 +1749,11 @@ export default function AppearancePage() {
         </div>
       )}
 
-      {/* Floating Mobile Preview Button */}
+      {/* Floating Preview Button (always visible) */}
       <button
         onClick={() => setShowMobilePreview(true)}
-        className="lg:hidden fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 flex items-center justify-center hover:bg-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-        aria-label="Open mobile preview"
+        className="fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 flex items-center justify-center hover:bg-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        aria-label="Open preview"
       >
         <Smartphone className="w-5 h-5" />
       </button>
